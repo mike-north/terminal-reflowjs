@@ -59,7 +59,7 @@ export interface TruncateOptions {
  * @public
  */
 export function newWriter(width: number, tail?: string): TruncateWriter {
-  throw new Error("truncate.newWriter() not yet implemented");
+  return new TruncateWriterImpl(width, tail);
 }
 
 /**
@@ -83,7 +83,7 @@ export function newWriter(width: number, tail?: string): TruncateWriter {
  * @public
  */
 export function truncate(s: string, width: number): string {
-  throw new Error("truncate.truncate() not yet implemented");
+  return truncateWithTail(s, width, "");
 }
 
 /**
@@ -112,5 +112,66 @@ export function truncateWithTail(
   width: number,
   tail: string
 ): string {
-  throw new Error("truncate.truncateWithTail() not yet implemented");
+  const writer = new TruncateWriterImpl(width, tail);
+  writer.write(s);
+  return writer.toString();
+}
+
+import stringWidth from "string-width";
+import { ANSI_MARKER, AnsiWriter, isAnsiTerminator, printableRuneWidth } from "./ansi";
+
+/**
+ * Writer class for truncating text to a specified width.
+ * Mirrors the behavior of Go's truncate.Writer while adapting to strings.
+ */
+class TruncateWriterImpl implements TruncateWriter {
+  private width: number;
+  private tail: string;
+  private ansiWriter: AnsiWriter;
+  private inAnsi = false;
+
+  constructor(width: number, tail = "") {
+    this.width = width;
+    this.tail = tail;
+    this.ansiWriter = new AnsiWriter();
+  }
+
+  write(content: string): void {
+    const tailWidth = printableRuneWidth(this.tail);
+
+    // If tail is wider than available width, write only the tail.
+    if (this.width < tailWidth) {
+      this.ansiWriter.write(this.tail);
+      return;
+    }
+
+    const availableWidth = this.width - tailWidth;
+    let currentWidth = 0;
+
+    for (const ch of content) {
+      if (ch === ANSI_MARKER) {
+        this.inAnsi = true;
+      } else if (this.inAnsi) {
+        if (isAnsiTerminator(ch)) {
+          this.inAnsi = false;
+        }
+      } else {
+        currentWidth += stringWidth(ch);
+      }
+
+      if (currentWidth > availableWidth) {
+        this.ansiWriter.write(this.tail);
+        if (this.ansiWriter.getLastSequence() !== "") {
+          this.ansiWriter.resetAnsi();
+        }
+        return;
+      }
+
+      this.ansiWriter.write(ch);
+    }
+  }
+
+  toString(): string {
+    return this.ansiWriter.toString();
+  }
 }

@@ -65,7 +65,7 @@ export interface MarginOptions {
  * @public
  */
 export function newWriter(width: number, options?: MarginOptions): MarginWriter {
-  throw new Error("margin.newWriter() not yet implemented");
+  return new MarginWriterImpl(width, options);
 }
 
 /**
@@ -89,5 +89,70 @@ export function newWriter(width: number, options?: MarginOptions): MarginWriter 
  * @public
  */
 export function margin(s: string, options: MarginOptions): string {
-  throw new Error("margin.margin() not yet implemented");
+  const writer = new MarginWriterImpl(0, options);
+  writer.write(s);
+  writer.close();
+  return writer.toString();
+}
+
+import { printableRuneWidth } from "./ansi";
+
+const defaultOptions: Required<MarginOptions> = {
+  top: 0,
+  bottom: 0,
+  left: 0,
+  right: 0,
+};
+
+class MarginWriterImpl implements MarginWriter {
+  private width: number;
+  private opts: Required<MarginOptions>;
+  private buffer = "";
+  private result = "";
+  private closed = false;
+
+  constructor(width: number, options?: MarginOptions) {
+    this.width = width;
+    this.opts = { ...defaultOptions, ...(options ?? {}) };
+  }
+
+  write(s: string): void {
+    if (this.closed) {
+      throw new Error("writer already closed");
+    }
+    this.buffer += s;
+  }
+
+  close(): void {
+    if (this.closed) return;
+    this.result = this.applyMargins(this.buffer);
+    this.closed = true;
+  }
+
+  toString(): string {
+    if (!this.closed) {
+      this.close();
+    }
+    return this.result;
+  }
+
+  private applyMargins(content: string): string {
+    const lines = content.split("\n");
+    const leftSpaces = " ".repeat(this.opts.left);
+
+    const paddedLines = lines.map((line) => {
+      const visibleWidth = printableRuneWidth(line);
+      const desiredRight =
+        this.opts.right ||
+        (this.width > 0 ? Math.max(0, this.width - this.opts.left - visibleWidth) : 0);
+      const rightSpaces = " ".repeat(desiredRight);
+      return `${leftSpaces}${line}${rightSpaces}`;
+    });
+
+    const blankLine = " ".repeat(this.opts.left + this.opts.right);
+    const top = Array.from({ length: this.opts.top }, () => blankLine);
+    const bottom = Array.from({ length: this.opts.bottom }, () => blankLine);
+
+    return [...top, ...paddedLines, ...bottom].join("\n");
+  }
 }
