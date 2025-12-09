@@ -134,7 +134,7 @@ export class AnsiWriter {
    * This is called when truncation happens in the middle of styled text.
    * 
    * Reference: https://github.com/muesli/reflow/blob/master/ansi/writer.go
-   * The Go version's ResetAnsi method adds \x1b[0m when sequences have changed.
+   * The Go version's ResetAnsi method adds ANSI reset when sequences have changed.
    */
   resetAnsi(): void {
     if (!this.seqChanged) {

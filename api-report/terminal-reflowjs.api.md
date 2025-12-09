@@ -6,21 +6,28 @@
 
 declare namespace ansi {
     export {
-        ansiString,
-        strip,
-        printableLength,
+        isAnsiTerminator,
+        printableRuneWidth,
+        ANSI_MARKER,
+        ANSI_RESET,
         AnsiWriter
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+// @public
+const ANSI_MARKER = "\u001B";
+
+// Warning: (ae-missing-release-tag) "ANSI_RESET" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public
-function ansiString(): string;
+const ANSI_RESET = "\u001B[0m";
 
 // @public
-interface AnsiWriter {
-    write(s: string): void;
+class AnsiWriter {
+    getLastSequence(): string;
+    resetAnsi(): void;
+    toString(): string;
+    write(str: string): void;
 }
 
 declare namespace dedent {
@@ -67,9 +74,12 @@ interface IndentWriter {
     write(s: string): void;
 }
 
+// @public
+function isAnsiTerminator(char: string): boolean;
+
 declare namespace margin {
     export {
-        newWriter_6 as newWriter,
+        newWriter_5 as newWriter,
         margin_2 as margin,
         MarginWriter,
         MarginOptions
@@ -119,12 +129,7 @@ function newWriter_4(width: number, paddingFunc: PaddingFunc | null): PaddingWri
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
 // @public
-function newWriter_5(width: number, tail?: string): TruncateWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_6(width: number, options?: MarginOptions): MarginWriter;
+function newWriter_5(width: number, options?: MarginOptions): MarginWriter;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
@@ -159,46 +164,36 @@ interface PaddingWriter {
     write(s: string): void;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function printableLength(s: string): number;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function strip(s: string): string;
+function printableRuneWidth(str: string): number;
 
 declare namespace truncate {
     export {
-        newWriter_5 as newWriter,
-        truncate_2 as truncate,
-        truncateWithTail,
-        TruncateWriter,
-        TruncateOptions
+        truncateString,
+        truncateStringWithTail,
+        truncateBytes,
+        truncateBytesWithTail,
+        TruncateWriter
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function truncate_2(s: string, width: number): string;
+function truncateBytes(buffer: Buffer, width: number): Buffer;
 
 // @public
-interface TruncateOptions {
-    tail?: string;
-    width?: number;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function truncateWithTail(s: string, width: number, tail: string): string;
+function truncateBytesWithTail(buffer: Buffer, width: number, tail: Buffer): Buffer;
 
 // @public
-interface TruncateWriter {
+function truncateString(str: string, width: number): string;
+
+// @public
+function truncateStringWithTail(str: string, width: number, tail: string): string;
+
+// @public
+class TruncateWriter {
+    constructor(width: number, tail?: string);
     toString(): string;
-    write(s: string): void;
+    write(content: string): void;
 }
 
 declare namespace wordwrap {

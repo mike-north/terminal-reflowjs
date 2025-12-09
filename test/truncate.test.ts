@@ -6,13 +6,14 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
+import { truncate } from '@/index';
+const {
   TruncateWriter,
   truncateString,
   truncateStringWithTail,
   truncateBytes,
   truncateBytesWithTail,
-} from '@/truncate';
+} = truncate;
 
 describe('TruncateWriter', () => {
   /**
@@ -114,7 +115,7 @@ describe('TruncateWriter', () => {
   ];
 
   testCases.forEach((tc, index) => {
-    it(`Test ${index}: ${tc.description}`, () => {
+    it(`Test ${String(index)}: ${tc.description}`, () => {
       const writer = new TruncateWriter(tc.width, tc.tail);
       writer.write(tc.input);
       const result = writer.toString();
