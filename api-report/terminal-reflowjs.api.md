@@ -96,10 +96,8 @@ interface MarginWriter {
     write(s: string): void;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function newWriter(limit: number): WordWrapWriter;
+function newWriter(limit: number): WordWrap;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
@@ -201,32 +199,30 @@ interface TruncateWriter {
     write(s: string): void;
 }
 
+// @public
+class WordWrap {
+    constructor(limit: number);
+    // (undocumented)
+    breakpoints: string[];
+    bytes(): Uint8Array;
+    close(): void;
+    // (undocumented)
+    keepNewlines: boolean;
+    // (undocumented)
+    limit: number;
+    // (undocumented)
+    newline: string[];
+    toString(): string;
+    write(b: Uint8Array | string): number;
+}
+
 declare namespace wordwrap {
     export {
         newWriter,
-        wordwrap_2 as wordwrap,
-        WordWrapWriter,
-        WordWrapOptions
+        wrapBytes,
+        wrapString,
+        WordWrap
     }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function wordwrap_2(s: string, limit: number): string;
-
-// @public
-interface WordWrapOptions {
-    breakpoints?: string[];
-    limit?: number;
-    newline?: string[];
-}
-
-// @public
-interface WordWrapWriter {
-    close(): void;
-    toString(): string;
-    write(s: string): void;
 }
 
 declare namespace wrap {
@@ -244,6 +240,9 @@ declare namespace wrap {
 function wrap_2(s: string, limit: number): string;
 
 // @public
+function wrapBytes(b: Uint8Array, limit: number): Uint8Array;
+
+// @public
 interface WrapOptions {
     keepNewlines?: boolean;
     limit?: number;
@@ -251,6 +250,9 @@ interface WrapOptions {
     preserveSpace?: boolean;
     tabWidth?: number;
 }
+
+// @public
+function wrapString(s: string, limit: number): string;
 
 // @public
 interface WrapWriter {

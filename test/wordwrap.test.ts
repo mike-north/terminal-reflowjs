@@ -140,7 +140,7 @@ describe("WordWrap", () => {
   ];
 
   testCases.forEach((tc, i) => {
-    it(`Test ${i}: ${tc.description}`, () => {
+    it(`Test ${String(i)}: ${tc.description}`, () => {
       const w = newWriter(tc.limit);
       w.keepNewlines = tc.keepNewlines;
 
