@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Writer, wrapString, wrapBytes } from "@/wrap";
+import { wrap } from "@/index";
+const { Writer, wrapString, wrapBytes } = wrap;
 
 describe("wrap", () => {
   describe("Writer", () => {
@@ -113,7 +114,7 @@ describe("wrap", () => {
     ];
 
     testCases.forEach((tc, i) => {
-      it(`Test ${i}: ${tc.name}`, () => {
+      it(`Test ${String(i)}: ${tc.name}`, () => {
         const writer = new Writer({
           limit: tc.limit,
           keepNewlines: tc.keepNewlines,

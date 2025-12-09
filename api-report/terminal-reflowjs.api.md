@@ -4,26 +4,232 @@
 
 ```ts
 
-// @public (undocumented)
-export function helloWorld(): string;
+declare namespace ansi {
+    export {
+        isTerminator,
+        runeWidth,
+        printableRuneWidth,
+        Marker
+    }
+}
+
+declare namespace dedent {
+    export {
+        dedent_2 as dedent
+    }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function dedent_2(s: string): string;
+
+declare namespace indent {
+    export {
+        newWriter_2 as newWriter,
+        indent_2 as indent,
+        IndentFunc,
+        IndentWriter,
+        IndentOptions
+    }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function indent_2(s: string, width: number): string;
 
 // @public
-export function isTerminator(char: string): boolean;
+type IndentFunc = (writer: {
+    write(s: string): void;
+}) => void;
 
 // @public
-export const Marker = "\u001B";
+interface IndentOptions {
+    indentFunc?: IndentFunc;
+    width?: number;
+}
 
 // @public
-export function printableRuneWidth(s: string): number;
+interface IndentWriter {
+    close(): void;
+    toString(): string;
+    write(s: string): void;
+}
 
 // @public
-export function runeWidth(char: string): number;
+function isTerminator(char: string): boolean;
+
+declare namespace margin {
+    export {
+        newWriter_5 as newWriter,
+        margin_2 as margin,
+        MarginWriter,
+        MarginOptions
+    }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function margin_2(s: string, options: MarginOptions): string;
 
 // @public
-export function wrapBytes(data: Buffer, limit: number, options?: Partial<Omit<WrapOptions, "limit">>): Buffer;
+interface MarginOptions {
+    bottom?: number;
+    left?: number;
+    right?: number;
+    top?: number;
+}
 
 // @public
-export interface WrapOptions {
+interface MarginWriter {
+    close(): void;
+    toString(): string;
+    write(s: string): void;
+}
+
+// @public
+const Marker = "\u001B";
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function newWriter(limit: number): WordWrapWriter;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function newWriter_2(width: number, indentFunc: IndentFunc | null): IndentWriter;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function newWriter_3(width: number, paddingFunc: PaddingFunc | null): PaddingWriter;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function newWriter_4(width: number, tail?: string): TruncateWriter;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function newWriter_5(width: number, options?: MarginOptions): MarginWriter;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function pad(s: string, width: number): string;
+
+declare namespace padding {
+    export {
+        newWriter_3 as newWriter,
+        pad,
+        PaddingFunc,
+        PaddingWriter,
+        PaddingOptions
+    }
+}
+
+// @public
+type PaddingFunc = (writer: {
+    write(s: string): void;
+}) => void;
+
+// @public
+interface PaddingOptions {
+    paddingFunc?: PaddingFunc;
+    width?: number;
+}
+
+// @public
+interface PaddingWriter {
+    close(): void;
+    toString(): string;
+    write(s: string): void;
+}
+
+// @public
+function printableRuneWidth(s: string): number;
+
+// @public
+function runeWidth(char: string): number;
+
+declare namespace truncate {
+    export {
+        newWriter_4 as newWriter,
+        truncate_2 as truncate,
+        truncateWithTail,
+        TruncateWriter,
+        TruncateOptions
+    }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function truncate_2(s: string, width: number): string;
+
+// @public
+interface TruncateOptions {
+    tail?: string;
+    width?: number;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function truncateWithTail(s: string, width: number, tail: string): string;
+
+// @public
+interface TruncateWriter {
+    toString(): string;
+    write(s: string): void;
+}
+
+declare namespace wordwrap {
+    export {
+        newWriter,
+        wordwrap_2 as wordwrap,
+        WordWrapWriter,
+        WordWrapOptions
+    }
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function wordwrap_2(s: string, limit: number): string;
+
+// @public
+interface WordWrapOptions {
+    breakpoints?: string[];
+    limit?: number;
+    newline?: string[];
+}
+
+// @public
+interface WordWrapWriter {
+    close(): void;
+    toString(): string;
+    write(s: string): void;
+}
+
+declare namespace wrap {
+    export {
+        wrapString,
+        wrapBytes,
+        WrapOptions,
+        Writer
+    }
+}
+
+// @public
+function wrapBytes(data: Buffer, limit: number, options?: Partial<Omit<WrapOptions, "limit">>): Buffer;
+
+// @public
+interface WrapOptions {
     keepNewlines?: boolean;
     limit: number;
     newline?: string;
@@ -32,10 +238,10 @@ export interface WrapOptions {
 }
 
 // @public
-export function wrapString(text: string, limit: number, options?: Partial<Omit<WrapOptions, "limit">>): string;
+function wrapString(text: string, limit: number, options?: Partial<Omit<WrapOptions, "limit">>): string;
 
 // @public
-export class Writer {
+class Writer {
     constructor(options: WrapOptions);
     bytes(): Buffer;
     keepNewlines: boolean;
@@ -46,7 +252,5 @@ export class Writer {
     toString(): string;
     write(text: string | Buffer): void;
 }
-
-// (No @packageDocumentation comment for this package)
 
 ```

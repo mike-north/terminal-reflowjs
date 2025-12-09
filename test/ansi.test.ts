@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Marker, isTerminator, printableRuneWidth } from "@/ansi";
+import { ansi } from "@/index";
+const { Marker, isTerminator, printableRuneWidth } = ansi;
 
 describe("ansi", () => {
   describe("Marker", () => {
