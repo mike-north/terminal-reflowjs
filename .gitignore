@@ -142,4 +142,4 @@ vite.config.ts.timestamp-*
 
 # API Extractor files
 temp/*
-!temp/.gitkeep
+!temp/.gitkeeppackage-lock.json
