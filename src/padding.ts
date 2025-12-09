@@ -79,7 +79,7 @@ export class PaddingWriter {
 
   /**
    * Pad the current line if needed.
-   * Only pads if there's content on the line (lineLen > 0) and the line is shorter than the padding width.
+   * Only pads if there's content on the line (lineLen \> 0) and the line is shorter than the padding width.
    * This matches the Go implementation behavior where empty lines are not padded.
    */
   private padLine(): void {
