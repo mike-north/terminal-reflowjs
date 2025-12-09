@@ -17,7 +17,7 @@ import { ANSI_MARKER, isAnsiTerminator } from "./ansi";
 export interface WordWrapOptions {
   /** Characters that can be used as breakpoints (default: space, hyphen) */
   breakpoints?: string[];
-  /** Characters that represent newlines (default: \n) */
+  /** Characters that represent newlines (default: `\n`) */
   newline?: string[];
   /** Whether to preserve explicit newlines (default: true) */
   keepNewlines?: boolean;

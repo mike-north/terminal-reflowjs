@@ -4,70 +4,100 @@
 
 ```ts
 
-declare namespace ansi {
-    export {
-        isTerminator,
-        MARKER,
-        Writer
-    }
+// @public
+export const ANSI_MARKER = "\u001B";
+
+// @public
+export const ANSI_RESET = "\u001B[0m";
+
+// @public
+export class AnsiBuffer {
+    getLastSequence(): string;
+    resetAnsi(): void;
+    toString(): string;
+    write(str: string): void;
 }
 
 // @public
-function bytes(content: Buffer, width: number): Buffer;
-
-declare namespace dedent {
-    export {
-        dedent_2 as dedent
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function dedent_2(s: string): string;
-
-declare namespace indent {
-    export {
-        newWriter_3 as newWriter,
-        newWriterPipe,
-        indentBytes,
-        indentString,
-        IndentFunc,
-        Writer_2 as Writer,
-        WriterPipe
-    }
+export class AnsiPassthrough {
+    constructor(forward: {
+        write: (data: string) => void;
+    });
+    getLastSequence(): string;
+    resetAnsi(): void;
+    restoreAnsi(): void;
+    write(data: string): void;
 }
 
 // @public
-function indentBytes(data: Uint8Array, indent: number): Uint8Array;
+export function dedent(s: string): string;
 
 // @public
-type IndentFunc = (writer: {
+export function hardwrap(s: string, limit: number, options?: HardWrapOptions): string;
+
+// @public
+export interface HardWrapOptions {
+    keepNewlines?: boolean;
+    newline?: string;
+    preserveSpace?: boolean;
+    tabWidth?: number;
+}
+
+// @public
+export class HardWrapWriter {
+    constructor(limit: number, options?: HardWrapOptions);
+    readonly keepNewlines: boolean;
+    readonly limit: number;
+    readonly newline: string;
+    readonly preserveSpace: boolean;
+    readonly tabWidth: number;
+    toString(): string;
+    write(s: string): void;
+}
+
+// @public
+export function indent(s: string, spaces: number, options?: IndentOptions): string;
+
+// @public
+export type IndentFunc = (writer: {
     write: (data: string) => void;
 }) => void;
 
 // @public
-function indentString(str: string, indent: number): string;
-
-// @public
-function isTerminator(c: string): boolean;
-
-declare namespace margin {
-    export {
-        newWriter_5 as newWriter,
-        margin_2 as margin,
-        MarginWriter,
-        MarginOptions
-    }
+export interface IndentOptions {
+    indentFunc?: IndentFunc;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function margin_2(s: string, options: MarginOptions): string;
+export class IndentWriter {
+    constructor(indent: number, options?: IndentOptions);
+    readonly indent: number;
+    readonly indentFunc?: IndentFunc;
+    toString(): string;
+    write(data: string): void;
+}
 
 // @public
-interface MarginOptions {
+export class IndentWriterPipe {
+    constructor(forward: {
+        write: (data: string) => void;
+    }, indent: number, options?: IndentOptions);
+    // (undocumented)
+    readonly indent: number;
+    // (undocumented)
+    readonly indentFunc?: IndentFunc;
+    // (undocumented)
+    write(data: string): void;
+}
+
+// @public
+export function isAnsiTerminator(c: string): boolean;
+
+// @public
+export function margin(s: string, options: MarginOptions): string;
+
+// @public
+export interface MarginOptions {
     bottom?: number;
     left?: number;
     right?: number;
@@ -75,189 +105,79 @@ interface MarginOptions {
 }
 
 // @public
-interface MarginWriter {
+export class MarginWriter {
+    constructor(options?: MarginOptions, width?: number);
     close(): void;
+    readonly options: Required<MarginOptions>;
     toString(): string;
+    readonly width: number;
     write(s: string): void;
 }
 
 // @public
-const MARKER = "\u001B";
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter(limit: number): WordWrapWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_2(limit: number): WrapWriter;
+export function pad(s: string, width: number, options?: PadOptions): string;
 
 // @public
-function newWriter_3(indent: number, indentFunc?: IndentFunc): Writer_2;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_4(width: number, tail?: string): TruncateWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_5(width: number, options?: MarginOptions): MarginWriter;
+export type PadFunc = (count: number) => string;
 
 // @public
-function newWriterPipe(forward: {
-    write: (data: string) => void;
-}, indent: number, indentFunc?: IndentFunc): WriterPipe;
-
-declare namespace padding {
-    export {
-        bytes,
-        string,
-        PaddingFunc,
-        PaddingWriter
-    }
+export interface PadOptions {
+    padFunc?: PadFunc;
 }
 
 // @public
-type PaddingFunc = (count: number) => string;
-
-// @public
-class PaddingWriter {
-    constructor(width: number, paddingFunc?: PaddingFunc | null);
-    bytes(): Buffer;
+export class PadWriter {
+    constructor(width: number, options?: PadOptions);
     close(): void;
-    flush(): void;
+    readonly padFunc?: PadFunc;
     toString(): string;
-    write(content: string): number;
+    readonly width: number;
+    write(content: string): void;
 }
 
 // @public
-function string(content: string, width: number): string;
-
-declare namespace truncate {
-    export {
-        newWriter_4 as newWriter,
-        truncate_2 as truncate,
-        truncateWithTail,
-        TruncateWriter,
-        TruncateOptions
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function truncate_2(s: string, width: number): string;
+export function printableRuneWidth(str: string): number;
 
 // @public
-interface TruncateOptions {
+export function stripAnsi(str: string): string;
+
+// @public
+export function truncate(s: string, width: number, options?: TruncateOptions): string;
+
+// @public
+export interface TruncateOptions {
     tail?: string;
-    width?: number;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function truncateWithTail(s: string, width: number, tail: string): string;
-
-// @public
-interface TruncateWriter {
+export class TruncateWriter {
+    constructor(width: number, options?: TruncateOptions);
+    readonly tail: string;
     toString(): string;
-    write(s: string): void;
+    readonly width: number;
+    write(content: string): void;
 }
 
-declare namespace wordwrap {
-    export {
-        newWriter,
-        wordwrap_2 as wordwrap,
-        WordWrapWriter,
-        WordWrapOptions
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function wordwrap_2(s: string, limit: number): string;
+export function wordwrap(s: string, limit: number, options?: WordWrapOptions): string;
 
 // @public
-interface WordWrapOptions {
+export interface WordWrapOptions {
     breakpoints?: string[];
-    limit?: number;
-    newline?: string[];
-}
-
-// @public
-interface WordWrapWriter {
-    close(): void;
-    toString(): string;
-    write(s: string): void;
-}
-
-declare namespace wrap {
-    export {
-        newWriter_2 as newWriter,
-        wrap_2 as wrap,
-        WrapWriter,
-        WrapOptions
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function wrap_2(s: string, limit: number): string;
-
-// @public
-interface WrapOptions {
     keepNewlines?: boolean;
-    limit?: number;
     newline?: string[];
-    preserveSpace?: boolean;
-    tabWidth?: number;
 }
 
 // @public
-interface WrapWriter {
+export class WordWrapWriter {
+    constructor(limit: number, options?: WordWrapOptions);
+    readonly breakpoints: string[];
+    close(): void;
+    readonly keepNewlines: boolean;
+    readonly limit: number;
+    readonly newline: string[];
     toString(): string;
     write(s: string): void;
-}
-
-// @public
-class Writer {
-    constructor(forward: {
-        write: (data: string) => void;
-    });
-    forward: {
-        write: (data: string) => void;
-    };
-    lastSequence(): string;
-    resetAnsi(): void;
-    restoreAnsi(): void;
-    write(data: string): void;
-}
-
-// @public
-class Writer_2 {
-    constructor(indent: number, indentFunc?: IndentFunc);
-    bytes(): Uint8Array;
-    indent: number;
-    indentFunc?: IndentFunc;
-    string(): string;
-    write(data: string | Uint8Array): number;
-}
-
-// @public
-class WriterPipe {
-    constructor(forward: {
-        write: (data: string) => void;
-    }, indent: number, indentFunc?: IndentFunc);
-    indent: number;
-    indentFunc?: IndentFunc;
-    write(data: string | Uint8Array): number;
 }
 
 ```

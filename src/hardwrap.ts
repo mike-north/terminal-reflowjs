@@ -15,7 +15,7 @@ import { ANSI_MARKER, isAnsiTerminator } from "./ansi";
  * @public
  */
 export interface HardWrapOptions {
-  /** Output newline sequence (default: "\n") */
+  /** Output newline sequence (default: `\n`) */
   newline?: string;
   /** Whether to preserve existing newlines (default: true) */
   keepNewlines?: boolean;
