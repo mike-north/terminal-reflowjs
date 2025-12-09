@@ -17,6 +17,6 @@
     "skipLibCheck": false,
     "allowSyntheticDefaultImports": false
   },
-  "include": ["src/**/*", "test/**/*", "eslint.config.mts"],
+  "include": ["src/**/*", "test/**/*", "eslint.config.mts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

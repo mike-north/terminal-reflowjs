@@ -4,7 +4,6 @@
     "noEmit": true,
     "rootDirs": [".."],
     "paths": {
-        "@/*": ["../src/*"],
         "@": ["../src"]
     }
   },

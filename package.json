@@ -50,6 +50,7 @@
     "@microsoft/api-extractor": "^7.55.2",
     "@types/node": "^24.10.2",
     "eslint": "^9.39.1",
+    "jiti": "^2.6.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0",
     "vitest": "^4.0.15"
