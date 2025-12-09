@@ -1,0 +1,5 @@
+## api-extractor config is json with comments
+api-extractor.jsonc linguist-language=jsonc
+
+# ./docs folder is auto-generated
+docs/** linguist-generated
