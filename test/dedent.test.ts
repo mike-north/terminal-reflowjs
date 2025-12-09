@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { dedentString } from "@/dedent";
+import { dedent } from "@/index";
+const { dedentString } = dedent;
 
 /**
  * Test suite for dedent module

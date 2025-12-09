@@ -3,8 +3,9 @@
   "compilerOptions": {
     "noEmit": true,
     "rootDirs": [".."],
+    "baseUrl": "..",
     "paths": {
-        "@": ["../src"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["**/*.test.ts"],

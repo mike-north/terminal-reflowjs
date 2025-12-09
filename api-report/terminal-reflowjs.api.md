@@ -25,14 +25,12 @@ interface AnsiWriter {
 
 declare namespace dedent {
     export {
-        dedent_2 as dedent
+        dedentString
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function dedent_2(s: string): string;
+function dedentString(s: string): string;
 
 declare namespace indent {
     export {
