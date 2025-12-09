@@ -1,11 +1,4 @@
-/**
- * Text indentation utilities with ANSI escape sequence preservation.
- * Ported from: https://github.com/muesli/reflow/tree/master/indent
- *
- * @packageDocumentation
- */
-
-import * as ansi from './ansi';
+import * as ansi from "./ansi";
 
 /**
  * Function type for custom indentation.
@@ -25,20 +18,20 @@ export class Writer {
   /** Custom indentation function (optional) */
   indentFunc?: IndentFunc;
 
-  private ansiWriter: ansi.Writer;
-  private buf = '';
+  private ansiWriter: ansi.WriterBase;
+  private buf = "";
   private skipIndent = false;
   private inAnsi = false;
 
   constructor(indent: number, indentFunc?: IndentFunc) {
     this.indent = indent;
     this.indentFunc = indentFunc;
-    
+
     // Create ANSI writer that writes to our internal buffer
-    this.ansiWriter = new ansi.Writer({
+    this.ansiWriter = new ansi.WriterBase({
       write: (data: string) => {
         this.buf += data;
-      }
+      },
     });
   }
 
@@ -47,12 +40,13 @@ export class Writer {
    * Automatically adds indentation at the start of each line while preserving ANSI sequences.
    */
   write(data: string | Uint8Array): number {
-    const str = typeof data === 'string' ? data : new TextDecoder().decode(data);
-    
+    const str =
+      typeof data === "string" ? data : new TextDecoder().decode(data);
+
     for (let i = 0; i < str.length; i++) {
       const c = str[i];
-      
-      if (c === '\x1B') {
+
+      if (c === "\x1B") {
         // ANSI escape sequence start
         this.inAnsi = true;
       } else if (this.inAnsi) {
@@ -68,7 +62,7 @@ export class Writer {
           // We're at the start of a line, need to add indentation
           // Reset any active ANSI styling before adding indent
           this.ansiWriter.resetAnsi();
-          
+
           if (this.indentFunc) {
             // Use custom indent function
             for (let j = 0; j < this.indent; j++) {
@@ -76,7 +70,7 @@ export class Writer {
             }
           } else {
             // Use default space indentation
-            this.ansiWriter.write(' '.repeat(this.indent));
+            this.ansiWriter.write(" ".repeat(this.indent));
           }
 
           this.skipIndent = true;
@@ -84,7 +78,7 @@ export class Writer {
           this.ansiWriter.restoreAnsi();
         }
 
-        if (c === '\n') {
+        if (c === "\n") {
           // End of current line - next character will need indentation
           this.skipIndent = false;
         }
@@ -123,28 +117,33 @@ export class WriterPipe {
   /** Custom indentation function (optional) */
   indentFunc?: IndentFunc;
 
-  private ansiWriter: ansi.Writer;
+  private ansiWriter: ansi.WriterBase;
   private skipIndent = false;
   private inAnsi = false;
 
-  constructor(forward: { write: (data: string) => void }, indent: number, indentFunc?: IndentFunc) {
+  constructor(
+    forward: { write: (data: string) => void },
+    indent: number,
+    indentFunc?: IndentFunc
+  ) {
     this.indent = indent;
     this.indentFunc = indentFunc;
-    
+
     // Create ANSI writer that forwards directly to the target
-    this.ansiWriter = new ansi.Writer(forward);
+    this.ansiWriter = new ansi.WriterBase(forward);
   }
 
   /**
    * Write content and forward it with indentation applied.
    */
   write(data: string | Uint8Array): number {
-    const str = typeof data === 'string' ? data : new TextDecoder().decode(data);
-    
+    const str =
+      typeof data === "string" ? data : new TextDecoder().decode(data);
+
     for (let i = 0; i < str.length; i++) {
       const c = str[i];
-      
-      if (c === '\x1B') {
+
+      if (c === "\x1B") {
         // ANSI escape sequence start
         this.inAnsi = true;
       } else if (this.inAnsi) {
@@ -158,7 +157,7 @@ export class WriterPipe {
         if (!this.skipIndent) {
           // We're at the start of a line, need to add indentation
           this.ansiWriter.resetAnsi();
-          
+
           if (this.indentFunc) {
             // Use custom indent function
             for (let j = 0; j < this.indent; j++) {
@@ -166,14 +165,14 @@ export class WriterPipe {
             }
           } else {
             // Use default space indentation
-            this.ansiWriter.write(' '.repeat(this.indent));
+            this.ansiWriter.write(" ".repeat(this.indent));
           }
 
           this.skipIndent = true;
           this.ansiWriter.restoreAnsi();
         }
 
-        if (c === '\n') {
+        if (c === "\n") {
           // End of current line
           this.skipIndent = false;
         }
@@ -201,7 +200,11 @@ export function newWriter(indent: number, indentFunc?: IndentFunc): Writer {
  * Reference: https://github.com/muesli/reflow/blob/master/indent/indent.go#L32-L39
  * @public
  */
-export function newWriterPipe(forward: { write: (data: string) => void }, indent: number, indentFunc?: IndentFunc): WriterPipe {
+export function newWriterPipe(
+  forward: { write: (data: string) => void },
+  indent: number,
+  indentFunc?: IndentFunc
+): WriterPipe {
   return new WriterPipe(forward, indent, indentFunc);
 }
 

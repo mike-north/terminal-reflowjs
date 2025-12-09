@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PaddingWriter, string, bytes } from "@/padding";
+import { PaddingWriter, string, bytes } from "@";
 
 describe("PaddingWriter", () => {
   it("should pass through text with no padding (width 0)", () => {
@@ -50,7 +50,7 @@ describe("PaddingWriter", () => {
     writer.write("");
     writer.flush();
     expect(writer.toString()).toBe("");
-    
+
     const writer2 = new PaddingWriter(4, (count: number) => ".".repeat(count));
     writer2.write("a");
     writer2.flush();

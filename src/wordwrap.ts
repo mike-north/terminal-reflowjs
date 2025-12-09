@@ -1,24 +1,3 @@
-/**
- * Word-wrap text at a specified width.
- *
- * This module provides utilities for wrapping text at word boundaries,
- * ensuring that words are not broken across lines unless absolutely necessary.
- *
- * Ported from: https://github.com/muesli/reflow/tree/master/wordwrap
- *
- * @example
- * ```ts
- * import { wordwrap } from 'terminal-reflowjs';
- *
- * const wrapped = wordwrap.wrapString("Hello World!", 5);
- * // Result:
- * // Hello
- * // World!
- * ```
- *
- * @packageDocumentation
- */
-
 import stringWidth from "string-width";
 import { ANSI_MARKER, isTerminator } from "./ansi";
 
@@ -56,7 +35,7 @@ export class WordWrap {
   private buf: string[] = [];
   private lineLen = 0;
   private ansi = false;
-  private space: string[] = [];  // Buffer for whitespace (spaces/tabs only)
+  private space: string[] = []; // Buffer for whitespace (spaces/tabs only)
   private word: string[] = [];
   private wordLen = 0;
 
@@ -100,7 +79,10 @@ export class WordWrap {
           // First flush any pending word
           this.flushWordOnly();
           // Add space to buffer (like a regular space breakpoint)
-          if (this.space.length === 0 || this.space[this.space.length - 1] !== " ") {
+          if (
+            this.space.length === 0 ||
+            this.space[this.space.length - 1] !== " "
+          ) {
             this.space.push(" ");
           }
         }
@@ -111,7 +93,7 @@ export class WordWrap {
         // Breakpoint character (space, hyphen, etc.)
         // First flush any pending word
         this.flushWordOnly();
-        
+
         // Handle the breakpoint character
         if (c === " " || c === "\t") {
           // Whitespace breakpoint - add to space buffer
@@ -150,7 +132,7 @@ export class WordWrap {
    */
   close(): void {
     this.flushWordAndSpace();
-    
+
     // When keepNewlines is false, strip trailing whitespace
     if (!this.keepNewlines) {
       // Remove trailing whitespace from buffer
@@ -237,12 +219,12 @@ export class WordWrap {
     if (this.word.length > 0) {
       this.flushWordOnly();
     }
-    
+
     // Handle any trailing space
     if (this.space.length > 0) {
       const spaceStr = this.space.join("");
       const spaceWidth = stringWidth(spaceStr);
-      
+
       // Only add trailing space if it fits
       if (this.limit === 0 || this.lineLen + spaceWidth <= this.limit) {
         this.buf.push(spaceStr);
@@ -261,7 +243,10 @@ export class WordWrap {
  * @returns A new WordWrap instance
  * @public
  */
-export function newWriter(limit: number, options: WordWrapOptions = {}): WordWrap {
+export function newWriter(
+  limit: number,
+  options: WordWrapOptions = {}
+): WordWrap {
   return new WordWrap(limit, options);
 }
 

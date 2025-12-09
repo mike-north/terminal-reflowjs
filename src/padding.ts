@@ -1,11 +1,4 @@
-/**
- * Padding module for padding text to a specified width while preserving ANSI codes.
- * Ported from https://github.com/muesli/reflow/tree/master/padding
- *
- * @packageDocumentation
- */
-
-import stringWidth from 'string-width';
+import stringWidth from "string-width";
 
 /**
  * PaddingFunc is a function that writes padding characters to a buffer.
@@ -30,8 +23,8 @@ export class PaddingWriter {
   constructor(width: number, paddingFunc: PaddingFunc | null = null) {
     this.padding = width;
     this.padFunc = paddingFunc;
-    this.buf = '';
-    this.cache = '';
+    this.buf = "";
+    this.cache = "";
     this.lineLen = 0;
     this.ansi = false;
   }
@@ -43,9 +36,9 @@ export class PaddingWriter {
    */
   write(content: string): number {
     const bytes = Buffer.from(content);
-    
+
     for (const char of content) {
-      if (char === '\x1B') {
+      if (char === "\x1B") {
         // ANSI escape sequence start
         // This simple detection matches the Go implementation behavior
         this.ansi = true;
@@ -63,7 +56,7 @@ export class PaddingWriter {
         // to know the exact width at the point where we encounter a newline.
         this.lineLen += stringWidth(char);
 
-        if (char === '\n') {
+        if (char === "\n") {
           // End of current line - add padding BEFORE the newline, then reset
           this.padLine();
           this.lineLen = 0;
@@ -90,7 +83,7 @@ export class PaddingWriter {
         this.buf += this.padFunc(padAmount);
       } else {
         // Default to spaces
-        this.buf += ' '.repeat(padAmount);
+        this.buf += " ".repeat(padAmount);
       }
     }
   }
@@ -108,7 +101,7 @@ export class PaddingWriter {
 
     // Move buffer to cache and reset
     this.cache = this.buf;
-    this.buf = '';
+    this.buf = "";
     this.lineLen = 0;
     this.ansi = false;
   }
@@ -138,7 +131,7 @@ export class PaddingWriter {
 /**
  * Pad a byte buffer to the specified width.
  * This is a convenience function that creates a PaddingWriter, writes the content, and returns the result.
- * 
+ *
  * @param content - The buffer to pad
  * @param width - The desired width
  * @returns The padded buffer
@@ -154,7 +147,7 @@ export function bytes(content: Buffer, width: number): Buffer {
 /**
  * Pad a string to the specified width.
  * This is a convenience function that creates a PaddingWriter, writes the content, and returns the result.
- * 
+ *
  * @param content - The string to pad
  * @param width - The desired width
  * @returns The padded string

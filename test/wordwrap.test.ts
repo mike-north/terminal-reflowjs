@@ -1,32 +1,33 @@
 import { describe, it, expect } from "vitest";
-import { wordwrap } from "@/index";
-const { newWriter, wrapString, WordWrap } = wordwrap;
+import { wordwrapString, newWordwrapWriter } from "@";
 
 describe("wordwrap", () => {
   it("wraps at word boundaries", () => {
-    const result = wrapString("Hello World!", 5);
+    const result = wordwrapString("Hello World!", 5);
     expect(result).toBe("Hello\nWorld!");
   });
 
   it("supports custom breakpoints", () => {
-    const writer = newWriter(4, { breakpoints: [",", " "] });
+    const writer = newWordwrapWriter(4, { breakpoints: [",", " "] });
     writer.write("foo,bar");
     writer.close();
     expect(writer.toString()).toBe("foo,\nbar");
   });
 
   it("does not break long words (passes through)", () => {
-    expect(wrapString("Supercalifragilistic", 6)).toBe("Supercalifragilistic");
+    expect(wordwrapString("Supercalifragilistic", 6)).toBe(
+      "Supercalifragilistic"
+    );
   });
 
   it("preserves ANSI sequences during wrapping", () => {
     const input = "\x1b[31mred text\x1b[0m";
-    const result = wrapString(input, 4);
+    const result = wordwrapString(input, 4);
     expect(result).toBe("\x1b[31mred\ntext\x1b[0m");
   });
 
   it("respects existing newlines", () => {
-    const result = wrapString("one two\nthree four", 5);
+    const result = wordwrapString("one two\nthree four", 5);
     expect(result).toBe("one\ntwo\nthree\nfour");
   });
 });
@@ -146,8 +147,7 @@ describe("WordWrap", () => {
       keepNewlines: true,
     },
     {
-      description:
-        "ANSI sequence codes don't affect length calculation",
+      description: "ANSI sequence codes don't affect length calculation",
       input:
         "\x1B[38;2;249;38;114mfoo\x1B[0m\x1B[38;2;248;248;242m \x1B[0m\x1B[38;2;230;219;116mbar\x1B[0m",
       expected:
@@ -168,7 +168,7 @@ describe("WordWrap", () => {
 
   testCases.forEach((tc, i) => {
     it(`Test ${String(i)}: ${tc.description}`, () => {
-      const w = newWriter(tc.limit, { keepNewlines: tc.keepNewlines });
+      const w = newWordwrapWriter(tc.limit, { keepNewlines: tc.keepNewlines });
 
       w.write(tc.input);
       w.close();
@@ -183,18 +183,18 @@ describe("WordWrap", () => {
    * Reference: https://github.com/muesli/reflow/blob/master/wordwrap/wordwrap_test.go#L149-L155
    */
   it("should wrap string using wrapString convenience function", () => {
-    const actual = wrapString("foo bar", 3);
+    const actual = wordwrapString("foo bar", 3);
     const expected = "foo\nbar";
     expect(actual).toBe(expected);
   });
 
   it("should handle empty strings", () => {
-    const actual = wrapString("", 10);
+    const actual = wordwrapString("", 10);
     expect(actual).toBe("");
   });
 
   it("should preserve ANSI codes across multiple writes", () => {
-    const w = newWriter(10);
+    const w = newWordwrapWriter(10);
     w.write("\x1B[31mred");
     w.write(" text\x1B[0m");
     w.close();
@@ -202,14 +202,14 @@ describe("WordWrap", () => {
   });
 
   it("should handle custom breakpoints", () => {
-    const w = newWriter(5, { breakpoints: [".", "-"] });
+    const w = newWordwrapWriter(5, { breakpoints: [".", "-"] });
     w.write("foo.bar-baz");
     w.close();
     expect(w.toString()).toBe("foo.\nbar-\nbaz");
   });
 
   it("should handle custom newline characters", () => {
-    const w = newWriter(10, { newline: ["\r", "\n"] });
+    const w = newWordwrapWriter(10, { newline: ["\r", "\n"] });
     w.write("foo\rbar\nbaz");
     w.close();
     expect(w.toString()).toBe("foo\nbar\nbaz");

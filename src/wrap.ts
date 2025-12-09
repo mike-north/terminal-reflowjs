@@ -1,28 +1,3 @@
-/**
- * Unconditional (hard) wrapping at exact character limits.
- *
- * This module provides utilities for hard-wrapping text at a specific
- * character width, breaking lines regardless of word boundaries.
- *
- * Ported from: https://github.com/muesli/reflow/tree/master/wrap
- *
- * @example
- * ```ts
- * import { wrap } from 'terminal-reflowjs';
- *
- * const wrapped = wrap.wrapString("Hello World!", 7);
- * // Result:
- * // Hello W
- * // orld!
- * ```
- *
- * @remarks
- * This wrapping method can be used in conjunction with word-wrapping
- * when word-wrapping is preferred but a line limit has to be enforced.
- *
- * @packageDocumentation
- */
-
 import stringWidth from "string-width";
 import { ANSI_MARKER, isTerminator } from "./ansi";
 
@@ -193,7 +168,11 @@ export function newWriter(limit: number): Writer {
  *
  * @public
  */
-export function wrapString(s: string, limit: number, options: Omit<WrapOptions, "limit"> = {}): string {
+export function wrapString(
+  s: string,
+  limit: number,
+  options: Omit<WrapOptions, "limit"> = {}
+): string {
   const w = new Writer({ ...options, limit });
   w.write(s);
   return w.toString();

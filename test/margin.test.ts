@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { margin, newWriter } from "@/margin";
+import { margin, newMarginWriter } from "@";
 
 describe("margin", () => {
   it("adds left and right margins", () => {
@@ -13,7 +13,7 @@ describe("margin", () => {
   });
 
   it("pads to target width when provided", () => {
-    const writer = newWriter(10, { left: 2 });
+    const writer = newMarginWriter(10, { left: 2 });
     writer.write("hi");
     writer.close();
     expect(writer.toString()).toBe("  hi      ");
@@ -24,4 +24,3 @@ describe("margin", () => {
     expect(result).toBe(" a \n b ");
   });
 });
-

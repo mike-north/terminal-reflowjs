@@ -1,21 +1,4 @@
 /**
- * Add margins to text blocks.
- *
- * This module provides utilities for adding margins (top, bottom, left, right)
- * around text content, combining the functionality of padding and indentation.
- *
- * @example
- * ```ts
- * import { margin } from 'terminal-reflowjs';
- *
- * const result = margin("Hello", { left: 2, right: 2 });
- * // Result: "  Hello  "
- * ```
- *
- * @packageDocumentation
- */
-
-/**
  * Writer interface for margin text processing.
  *
  * Compatible with io.WriteCloser patterns from Go.
@@ -64,7 +47,10 @@ export interface MarginOptions {
  * @throws {@link Error} Not yet implemented
  * @public
  */
-export function newWriter(width: number, options?: MarginOptions): MarginWriter {
+export function newWriter(
+  width: number,
+  options?: MarginOptions
+): MarginWriter {
   return new MarginWriterImpl(width, options);
 }
 
@@ -144,7 +130,9 @@ class MarginWriterImpl implements MarginWriter {
       const visibleWidth = printableRuneWidth(line);
       const desiredRight =
         this.opts.right ||
-        (this.width > 0 ? Math.max(0, this.width - this.opts.left - visibleWidth) : 0);
+        (this.width > 0
+          ? Math.max(0, this.width - this.opts.left - visibleWidth)
+          : 0);
       const rightSpaces = " ".repeat(desiredRight);
       return `${leftSpaces}${line}${rightSpaces}`;
     });

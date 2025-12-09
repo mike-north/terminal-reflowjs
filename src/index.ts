@@ -10,11 +10,43 @@
  * @packageDocumentation
  */
 
-export * as ansi from "./ansi";
-export * as wordwrap from "./wordwrap";
-export * as wrap from "./wrap";
-export * as indent from "./indent";
-export * as dedent from "./dedent";
-export * as padding from "./padding";
-export * as truncate from "./truncate";
-export * as margin from "./margin";
+export {
+  ANSI_MARKER,
+  ANSI_RESET,
+  AnsiWriter,
+  WriterBase as AnsiWriterBase,
+  isAnsiTerminator,
+  isTerminator,
+  printableRuneWidth,
+} from "./ansi";
+export {
+  wordwrap,
+  wrapBytes as wordwrapBytes,
+  wrapString as wordwrapString,
+  newWriter as newWordwrapWriter,
+  WordWrap,
+} from "./wordwrap";
+export {
+  wrap,
+  wrapBytes,
+  wrapString,
+  newWriter as newWrapWriter,
+  Writer as WrapWriter,
+} from "./wrap";
+export {
+  type IndentFunc,
+  indentBytes,
+  indentString,
+  newWriter as newIndentWriter,
+  newWriterPipe as newIndentWriterPipe,
+  Writer as IndentWriter,
+  WriterPipe as IndentWriterPipe,
+} from "./indent";
+export { dedent } from "./dedent";
+export { bytes, string, PaddingWriter } from "./padding";
+export {
+  truncate,
+  truncateWithTail,
+  newWriter as newTruncateWriter,
+} from "./truncate";
+export { margin, newWriter as newMarginWriter } from "./margin";

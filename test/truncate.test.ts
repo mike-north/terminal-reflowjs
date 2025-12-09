@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { truncate, truncateWithTail, newWriter } from "@/truncate";
+import { truncate, truncateWithTail, newTruncateWriter } from "@";
 
 describe("truncate", () => {
   it("truncates plain text to width", () => {
@@ -27,7 +27,7 @@ describe("truncate", () => {
   it("supports streaming writer usage", () => {
     // width=7, tail=".." (2 chars), available=5 for content
     // "terminal" -> "termi" (5 chars) + ".." = "termi.." (7 chars total)
-    const w = newWriter(7, "..");
+    const w = newTruncateWriter(7, "..");
     w.write("terminal");
     expect(w.toString()).toBe("termi..");
   });
@@ -35,7 +35,7 @@ describe("truncate", () => {
   it("truncates to exact limit with tail", () => {
     // width=6, tail=".." (2 chars), available=4 for content
     // "terminal" -> "term" (4 chars) + ".." = "term.." (6 chars total)
-    const w = newWriter(6, "..");
+    const w = newTruncateWriter(6, "..");
     w.write("terminal");
     expect(w.toString()).toBe("term..");
   });

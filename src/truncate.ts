@@ -1,24 +1,4 @@
 /**
- * Truncate text to a specified width.
- *
- * This module provides utilities for shortening text to fit within
- * a maximum width, optionally adding an ellipsis or other indicator.
- *
- * @example
- * ```ts
- * import { truncate, truncateWithTail } from 'terminal-reflowjs';
- *
- * truncate("Hello World!", 7);
- * // Result: "Hello W"
- *
- * truncateWithTail("Hello World!", 9, "...");
- * // Result: "Hello ..."
- * ```
- *
- * @packageDocumentation
- */
-
-/**
  * Writer interface for truncate text processing.
  *
  * Compatible with io.Writer patterns from Go.
@@ -118,7 +98,12 @@ export function truncateWithTail(
 }
 
 import stringWidth from "string-width";
-import { ANSI_MARKER, AnsiWriter, isAnsiTerminator, printableRuneWidth } from "./ansi";
+import {
+  ANSI_MARKER,
+  AnsiWriter,
+  isAnsiTerminator,
+  printableRuneWidth,
+} from "./ansi";
 
 /**
  * Writer class for truncating text to a specified width.

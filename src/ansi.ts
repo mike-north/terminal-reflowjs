@@ -1,10 +1,3 @@
-/**
- * ANSI utility helpers.
- * Ported from: https://github.com/muesli/reflow/tree/master/ansi
- *
- * @packageDocumentation
- */
-
 import stringWidth from "string-width";
 
 /**
@@ -12,18 +5,6 @@ import stringWidth from "string-width";
  * @public
  */
 export const ANSI_MARKER = "\x1B";
-
-/**
- * Alias retained for backward compatibility with existing code/tests.
- * @public
- */
-export const MARKER = ANSI_MARKER;
-
-/**
- * Another alias (capitalized differently) for tests expecting this naming.
- * @public
- */
-export const Marker = ANSI_MARKER;
 
 /**
  * ANSI reset sequence to clear formatting.
@@ -142,7 +123,7 @@ export class AnsiWriter {
  * Reference: https://github.com/muesli/reflow/blob/master/ansi/writer.go
  * @public
  */
-export class Writer {
+export class WriterBase {
   /** The underlying writer to forward output to */
   forward: { write: (data: string) => void };
 
@@ -163,7 +144,7 @@ export class Writer {
     for (let i = 0; i < data.length; i++) {
       const c = data[i];
 
-      if (c === MARKER) {
+      if (c === ANSI_MARKER) {
         // ANSI escape sequence start
         this.ansi = true;
         this.seqchanged = true;

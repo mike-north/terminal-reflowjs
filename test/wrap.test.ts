@@ -4,8 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { wrap } from "@/index";
-const { Writer, wrapString, wrapBytes, newWriter } = wrap;
+import { newWrapWriter, wrap, wrapBytes, wrapString, WrapWriter } from "@";
 
 describe("wrap (hard wrap)", () => {
   it("wraps text at exact width", () => {
@@ -23,7 +22,7 @@ describe("wrap (hard wrap)", () => {
   });
 
   it("supports writer interface", () => {
-    const writer = newWriter(3);
+    const writer = newWrapWriter(3);
     writer.write("abcdef");
     expect(writer.toString()).toBe("abc\ndef");
   });
@@ -117,8 +116,10 @@ describe("wrap", () => {
       },
       {
         name: "ANSI sequence codes don't affect length calculation",
-        input: "\x1B[38;2;249;38;114mfoo\x1B[0m\x1B[38;2;248;248;242m \x1B[0m\x1B[38;2;230;219;116mbar\x1B[0m",
-        expected: "\x1B[38;2;249;38;114mfoo\x1B[0m\x1B[38;2;248;248;242m \x1B[0m\x1B[38;2;230;219;116mbar\x1B[0m",
+        input:
+          "\x1B[38;2;249;38;114mfoo\x1B[0m\x1B[38;2;248;248;242m \x1B[0m\x1B[38;2;230;219;116mbar\x1B[0m",
+        expected:
+          "\x1B[38;2;249;38;114mfoo\x1B[0m\x1B[38;2;248;248;242m \x1B[0m\x1B[38;2;230;219;116mbar\x1B[0m",
         limit: 7,
         keepNewlines: true,
         preserveSpace: false,
@@ -126,8 +127,10 @@ describe("wrap", () => {
       },
       {
         name: "ANSI control codes don't get wrapped",
-        input: "\x1B[38;2;249;38;114m(\x1B[0m\x1B[38;2;248;248;242mjust another test\x1B[38;2;249;38;114m)\x1B[0m",
-        expected: "\x1B[38;2;249;38;114m(\x1B[0m\x1B[38;2;248;248;242mju\nst \nano\nthe\nr t\nest\x1B[38;2;249;38;114m\n)\x1B[0m",
+        input:
+          "\x1B[38;2;249;38;114m(\x1B[0m\x1B[38;2;248;248;242mjust another test\x1B[38;2;249;38;114m)\x1B[0m",
+        expected:
+          "\x1B[38;2;249;38;114m(\x1B[0m\x1B[38;2;248;248;242mju\nst \nano\nthe\nr t\nest\x1B[38;2;249;38;114m\n)\x1B[0m",
         limit: 3,
         keepNewlines: true,
         preserveSpace: false,
@@ -137,7 +140,7 @@ describe("wrap", () => {
 
     testCases.forEach((tc, i) => {
       it(`Test ${String(i)}: ${tc.name}`, () => {
-        const writer = new Writer({
+        const writer = new WrapWriter({
           limit: tc.limit,
           keepNewlines: tc.keepNewlines,
           preserveSpace: tc.preserveSpace,
@@ -181,7 +184,7 @@ describe("wrap", () => {
 
     it("should treat each character in newline string as a newline", () => {
       // When newline is "\r\n", both \r and \n in input should be treated as newlines
-      const writer = new Writer({
+      const writer = new WrapWriter({
         limit: 10,
         newline: "\r\n",
         keepNewlines: true,
@@ -197,7 +200,7 @@ describe("wrap", () => {
       const input = Buffer.from("foo bar", "utf-8");
       const result = wrapBytes(input, 3);
       const expected = Buffer.from("foo\nbar", "utf-8");
-      
+
       expect(result.equals(expected)).toBe(true);
     });
 
@@ -206,7 +209,7 @@ describe("wrap", () => {
       const result = wrapBytes(input, 8);
       // "Hello World" = 11 characters, wraps at position 8: "Hello Wo" | "rld"
       const expected = Buffer.from("\x1B[31mHello\x1B[0m Wo\nrld", "utf-8");
-      
+
       expect(result.equals(expected)).toBe(true);
     });
   });

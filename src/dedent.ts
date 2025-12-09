@@ -1,27 +1,3 @@
-/**
- * Remove common leading whitespace from text blocks.
- *
- * This module provides utilities for removing indentation by detecting
- * the minimum common leading whitespace across all lines.
- *
- * Ported from: https://github.com/muesli/reflow/tree/master/dedent
- *
- * @example
- * ```ts
- * import { dedent } from 'terminal-reflowjs';
- *
- * const input = `    Hello World!
- *   Hello World!
- * `;
- * const result = dedent.dedent(input);
- * // Result:
- * //   Hello World!
- * // Hello World!
- * ```
- *
- * @packageDocumentation
- */
-
 import { ANSI_MARKER } from "./ansi";
 
 /**
@@ -127,9 +103,3 @@ export function dedent(s: string): string {
 
   return result.join("\n");
 }
-
-/**
- * Alias for dedent to mirror Go API (String function).
- * @public
- */
-export const dedentString = dedent;

@@ -20,6 +20,9 @@
     "generate:docs": "api-documenter markdown --input temp --output docs",
     "check:api-report": "api-extractor run",
     "check:lint": "eslint .",
+    "check:knip": "knip",
+    "check:test-types": "tsc -P test/tsconfig.json",
+    "check": "pnpm check:lint && pnpm check:knip && pnpm check:test-types",
     "build": "tsc --project tsconfig.build.json",
     "test": "vitest run",
     "changeset": "changeset",
@@ -51,12 +54,12 @@
     "@types/node": "^24.10.2",
     "eslint": "^9.39.1",
     "jiti": "^2.6.1",
+    "knip": "^5.73.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0",
     "vitest": "^4.0.15"
   },
   "dependencies": {
-    "ansi-regex": "^6.2.2",
     "string-width": "^8.1.0"
   }
 }
