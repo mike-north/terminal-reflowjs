@@ -6,25 +6,11 @@
 
 declare namespace ansi {
     export {
-        ansiString,
-        strip,
-        printableLength,
-        AnsiWriter
+        isTerminator,
+        MARKER,
+        Writer
     }
 }
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function ansiString(): string;
-
-// @public
-interface AnsiWriter {
-    write(s: string): void;
-}
-
-// @public
-function bytes(content: Buffer, width: number): Buffer;
 
 declare namespace dedent {
     export {
@@ -40,39 +26,32 @@ function dedent_2(s: string): string;
 declare namespace indent {
     export {
         newWriter_3 as newWriter,
-        indent_2 as indent,
+        newWriterPipe,
+        indentBytes,
+        indentString,
         IndentFunc,
-        IndentWriter,
-        IndentOptions
+        Writer_2 as Writer,
+        WriterPipe
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function indent_2(s: string, width: number): string;
+function indentBytes(data: Uint8Array, indent: number): Uint8Array;
 
 // @public
 type IndentFunc = (writer: {
-    write(s: string): void;
+    write: (data: string) => void;
 }) => void;
 
 // @public
-interface IndentOptions {
-    indentFunc?: IndentFunc;
-    width?: number;
-}
+function indentString(str: string, indent: number): string;
 
 // @public
-interface IndentWriter {
-    close(): void;
-    toString(): string;
-    write(s: string): void;
-}
+function isTerminator(c: string): boolean;
 
 declare namespace margin {
     export {
-        newWriter_5 as newWriter,
+        newWriter_6 as newWriter,
         margin_2 as margin,
         MarginWriter,
         MarginOptions
@@ -99,6 +78,9 @@ interface MarginWriter {
     write(s: string): void;
 }
 
+// @public
+const MARKER = "\u001B";
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
 // @public
@@ -109,59 +91,65 @@ function newWriter(limit: number): WordWrapWriter;
 // @public
 function newWriter_2(limit: number): WrapWriter;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function newWriter_3(width: number, indentFunc: IndentFunc | null): IndentWriter;
+function newWriter_3(indent: number, indentFunc?: IndentFunc): Writer_2;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
 // @public
-function newWriter_4(width: number, tail?: string): TruncateWriter;
+function newWriter_4(width: number, paddingFunc: PaddingFunc | null): PaddingWriter;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
 // @public
-function newWriter_5(width: number, options?: MarginOptions): MarginWriter;
+function newWriter_5(width: number, tail?: string): TruncateWriter;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function newWriter_6(width: number, options?: MarginOptions): MarginWriter;
+
+// @public
+function newWriterPipe(forward: {
+    write: (data: string) => void;
+}, indent: number, indentFunc?: IndentFunc): WriterPipe;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
+//
+// @public
+function pad(s: string, width: number): string;
 
 declare namespace padding {
     export {
-        bytes,
-        string,
+        newWriter_4 as newWriter,
+        pad,
         PaddingFunc,
-        PaddingWriter
+        PaddingWriter,
+        PaddingOptions
     }
 }
 
 // @public
-type PaddingFunc = (count: number) => string;
+type PaddingFunc = (writer: {
+    write(s: string): void;
+}) => void;
 
 // @public
-class PaddingWriter {
-    constructor(width: number, paddingFunc?: PaddingFunc | null);
-    bytes(): Buffer;
-    close(): void;
-    flush(): void;
-    toString(): string;
-    write(content: string): number;
+interface PaddingOptions {
+    paddingFunc?: PaddingFunc;
+    width?: number;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function printableLength(s: string): number;
-
-// @public
-function string(content: string, width: number): string;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function strip(s: string): string;
+interface PaddingWriter {
+    close(): void;
+    toString(): string;
+    write(s: string): void;
+}
 
 declare namespace truncate {
     export {
-        newWriter_4 as newWriter,
+        newWriter_5 as newWriter,
         truncate_2 as truncate,
         truncateWithTail,
         TruncateWriter,
@@ -246,6 +234,40 @@ interface WrapOptions {
 interface WrapWriter {
     toString(): string;
     write(s: string): void;
+}
+
+// @public
+class Writer {
+    constructor(forward: {
+        write: (data: string) => void;
+    });
+    forward: {
+        write: (data: string) => void;
+    };
+    lastSequence(): string;
+    resetAnsi(): void;
+    restoreAnsi(): void;
+    write(data: string): void;
+}
+
+// @public
+class Writer_2 {
+    constructor(indent: number, indentFunc?: IndentFunc);
+    bytes(): Uint8Array;
+    indent: number;
+    indentFunc?: IndentFunc;
+    string(): string;
+    write(data: string | Uint8Array): number;
+}
+
+// @public
+class WriterPipe {
+    constructor(forward: {
+        write: (data: string) => void;
+    }, indent: number, indentFunc?: IndentFunc);
+    indent: number;
+    indentFunc?: IndentFunc;
+    write(data: string | Uint8Array): number;
 }
 
 ```

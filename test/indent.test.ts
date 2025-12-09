@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { indent } from "@";
+import { indent } from "@/index";
 
 describe("indent", () => {
   describe("Writer", () => {
@@ -169,7 +169,7 @@ describe("indent", () => {
       });
 
       it("should accept custom indent function", () => {
-        const indentFunc = (w: any) => w.write("-");
+        const indentFunc = (w: { write: (data: string) => void }) => { w.write("-"); };
         const w = indent.newWriter(2, indentFunc);
         w.write("test");
         expect(w.string()).toBe("--test");
