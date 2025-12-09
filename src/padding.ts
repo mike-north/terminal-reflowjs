@@ -26,7 +26,6 @@ export class PaddingWriter {
   private cache: string;
   private lineLen: number;
   private ansi: boolean;
-  private readonly ansiPattern: RegExp;
 
   constructor(width: number, paddingFunc: PaddingFunc | null = null) {
     this.padding = width;
@@ -35,7 +34,6 @@ export class PaddingWriter {
     this.cache = '';
     this.lineLen = 0;
     this.ansi = false;
-    this.ansiPattern = ansiRegex();
   }
 
   /**
