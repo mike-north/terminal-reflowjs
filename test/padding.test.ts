@@ -1,232 +1,125 @@
 import { describe, it, expect } from "vitest";
-import { PaddingWriter, string, bytes } from "@";
+import { pad, PadWriter } from "@";
 
-describe("PaddingWriter", () => {
-  it("should pass through text with no padding (width 0)", () => {
-    const writer = new PaddingWriter(0, null);
-    writer.write("foobar");
-    writer.flush();
-    expect(writer.toString()).toBe("foobar");
+describe("pad", () => {
+  it("pads a string to specified width", () => {
+    expect(pad("hello", 10)).toBe("hello     ");
   });
 
-  it("should pad basic text to specified width", () => {
-    const writer = new PaddingWriter(10, null);
-    writer.write("foobar");
-    writer.flush();
-    expect(writer.toString()).toBe("foobar    ");
+  it("does not pad if already at width", () => {
+    expect(pad("hello", 5)).toBe("hello");
   });
 
-  it("should pad multi-line text", () => {
-    const writer = new PaddingWriter(6, null);
-    writer.write("foo\nbar");
-    writer.flush();
-    expect(writer.toString()).toBe("foo   \nbar   ");
+  it("handles multiple lines", () => {
+    expect(pad("hi\nthere", 6)).toBe("hi    \nthere ");
   });
 
-  it("should not pad empty trailing lines", () => {
-    const writer = new PaddingWriter(6, null);
-    writer.write("foo\nbar\n");
-    writer.flush();
-    expect(writer.toString()).toBe("foo   \nbar   \n");
-  });
-
-  it("should preserve ANSI sequence codes", () => {
-    const writer = new PaddingWriter(6, null);
-    writer.write("\x1B[38;2;249;38;114mfoo");
-    writer.flush();
-    expect(writer.toString()).toBe("\x1B[38;2;249;38;114mfoo   ");
-  });
-
-  it("should handle multiple writes", () => {
-    const writer = new PaddingWriter(6, null);
-    writer.write("foo\n");
-    writer.write("bar");
-    writer.close();
-    expect(writer.toString()).toBe("foo   \nbar   ");
-  });
-
-  it("should support custom padding function", () => {
-    const writer = new PaddingWriter(4, (count: number) => ".".repeat(count));
-    writer.write("");
-    writer.flush();
-    expect(writer.toString()).toBe("");
-
-    const writer2 = new PaddingWriter(4, (count: number) => ".".repeat(count));
-    writer2.write("a");
-    writer2.flush();
-    expect(writer2.toString()).toBe("a...");
-  });
-
-  it("should handle flush being called multiple times", () => {
-    const writer = new PaddingWriter(6, null);
-    writer.write("foo");
-    writer.flush();
-    expect(writer.toString()).toBe("foo   ");
-
-    writer.write("bar");
-    writer.flush();
-    expect(writer.toString()).toBe("bar   ");
-  });
-
-  it("should handle ANSI codes with newlines", () => {
-    const writer = new PaddingWriter(10, null);
-    writer.write("\x1B[31mred\x1B[0m\nblue");
-    writer.flush();
-    expect(writer.toString()).toBe("\x1B[31mred\x1B[0m       \nblue      ");
-  });
-
-  it("should handle text with only ANSI codes (zero display width)", () => {
-    const writer = new PaddingWriter(5, null);
-    writer.write("\x1B[31m\x1B[0m");
-    writer.flush();
-    // ANSI codes with no visible content should not be padded (matches Go behavior)
-    expect(writer.toString()).toBe("\x1B[31m\x1B[0m");
-  });
-
-  it("should handle mixed ANSI and regular text", () => {
-    const writer = new PaddingWriter(10, null);
-    writer.write("a\x1B[31mb\x1B[0mc");
-    writer.flush();
-    expect(writer.toString()).toBe("a\x1B[31mb\x1B[0mc       ");
-  });
-
-  it("should return bytes correctly", () => {
-    const writer = new PaddingWriter(10, null);
-    writer.write("foobar");
-    writer.flush();
-    const result = writer.bytes();
-    expect(result.toString()).toBe("foobar    ");
-    expect(Buffer.isBuffer(result)).toBe(true);
+  it("preserves ANSI sequences", () => {
+    const input = "\x1B[31mred\x1B[0m";
+    const result = pad(input, 6);
+    expect(result).toBe("\x1B[31mred\x1B[0m   ");
   });
 });
 
-describe("string helper function", () => {
-  it("should pad a string to specified width", () => {
-    const actual = string("foobar", 10);
-    const expected = "foobar    ";
-    expect(actual).toBe(expected);
+describe("PadWriter", () => {
+  it("should pad content to width", () => {
+    const w = new PadWriter(10);
+    w.write("hello");
+    w.close();
+    expect(w.toString()).toBe("hello     ");
   });
 
-  it("should handle empty string", () => {
-    const actual = string("", 5);
-    // Empty strings are not padded (matches Go behavior)
-    const expected = "";
-    expect(actual).toBe(expected);
+  it("should not pad empty lines", () => {
+    const w = new PadWriter(10);
+    w.write("\n\n");
+    w.close();
+    expect(w.toString()).toBe("\n\n");
   });
 
-  it("should handle string with ANSI codes", () => {
-    const actual = string("\x1B[31mred\x1B[0m", 10);
-    const expected = "\x1B[31mred\x1B[0m       ";
-    expect(actual).toBe(expected);
+  it("should handle custom pad function", () => {
+    const w = new PadWriter(8, { padFunc: (n) => ".".repeat(n) });
+    w.write("hello");
+    w.close();
+    expect(w.toString()).toBe("hello...");
   });
 
-  it("should handle multi-line string", () => {
-    const actual = string("foo\nbar", 6);
-    const expected = "foo   \nbar   ";
-    expect(actual).toBe(expected);
+  describe("ANSI handling", () => {
+    it("should not count ANSI codes toward width", () => {
+      const w = new PadWriter(10);
+      w.write("\x1B[31mred\x1B[0m");
+      w.close();
+      expect(w.toString()).toBe("\x1B[31mred\x1B[0m       ");
+    });
+
+    it("should handle complex ANSI sequences", () => {
+      const w = new PadWriter(10);
+      w.write("\x1B[38;2;255;0;0mtext\x1B[0m");
+      w.close();
+      expect(w.toString()).toBe("\x1B[38;2;255;0;0mtext\x1B[0m      ");
+    });
+  });
+
+  describe("multiline handling", () => {
+    it("should pad each line independently", () => {
+      const w = new PadWriter(10);
+      w.write("foo\nbar\nbaz");
+      w.close();
+      expect(w.toString()).toBe("foo       \nbar       \nbaz       ");
+    });
+
+    it("should not pad empty lines", () => {
+      const w = new PadWriter(10);
+      w.write("foo\n\nbar");
+      w.close();
+      expect(w.toString()).toBe("foo       \n\nbar       ");
+    });
   });
 });
 
-describe("bytes helper function", () => {
-  it("should pad bytes to specified width", () => {
-    const input = Buffer.from("foobar");
-    const actual = bytes(input, 10);
-    const expected = "foobar    ";
-    expect(actual.toString()).toBe(expected);
-    expect(Buffer.isBuffer(actual)).toBe(true);
+describe("pad function", () => {
+  const testCases = [
+    { input: "", width: 0, expected: "" },
+    { input: "", width: 4, expected: "" },
+    { input: "foo", width: 0, expected: "foo" },
+    { input: "foo", width: 3, expected: "foo" },
+    { input: "foo", width: 4, expected: "foo " },
+    { input: "foo", width: 10, expected: "foo       " },
+    { input: "foo\n", width: 4, expected: "foo \n" },
+    { input: "foo\n", width: 10, expected: "foo       \n" },
+    { input: "foo\nbar", width: 4, expected: "foo \nbar " },
+    { input: "\n", width: 4, expected: "\n" },
+  ];
+
+  testCases.forEach((tc, i) => {
+    it(`Test ${i}: "${tc.input}" with width ${tc.width}`, () => {
+      expect(pad(tc.input, tc.width)).toBe(tc.expected);
+    });
   });
 
-  it("should handle empty buffer", () => {
-    const input = Buffer.from("");
-    const actual = bytes(input, 5);
-    // Empty buffers are not padded (matches Go behavior)
-    const expected = "";
-    expect(actual.toString()).toBe(expected);
+  describe("ANSI sequence handling", () => {
+    it("should ignore ANSI sequences in width calculation", () => {
+      const input = "\x1B[31mfoo\x1B[0m";
+      const result = pad(input, 4);
+      expect(result).toBe("\x1B[31mfoo\x1B[0m ");
+    });
+
+    it("should handle complex ANSI sequences", () => {
+      const input =
+        "\x1B[38;2;249;38;114mfoo\x1B[0m\x1B[38;2;248;248;242m \x1B[0m\x1B[38;2;230;219;116mbar\x1B[0m";
+      const result = pad(input, 10);
+      expect(result).toBe(input + "   ");
+    });
   });
 
-  it("should handle buffer with ANSI codes", () => {
-    const input = Buffer.from("\x1B[31mred\x1B[0m");
-    const actual = bytes(input, 10);
-    const expected = "\x1B[31mred\x1B[0m       ";
-    expect(actual.toString()).toBe(expected);
-  });
-});
+  describe("wide characters", () => {
+    it("should handle CJK characters correctly", () => {
+      const result = pad("中文", 6);
+      expect(result).toBe("中文  ");
+    });
 
-describe("Edge cases from Go implementation", () => {
-  it("should handle wide characters (emojis)", () => {
-    // Emoji characters typically have width 2
-    const writer = new PaddingWriter(8, null);
-    writer.write("😀a");
-    writer.flush();
-    // Emoji takes 2 spaces, 'a' takes 1, so we need 5 more spaces
-    expect(writer.toString()).toBe("😀a     ");
-  });
-
-  it("should handle Chinese characters (wide characters)", () => {
-    // Chinese characters have width 2
-    const writer = new PaddingWriter(6, null);
-    writer.write("你好");
-    writer.flush();
-    // Two Chinese chars = 4 width, need 2 more spaces
-    expect(writer.toString()).toBe("你好  ");
-  });
-
-  it("should handle mixed wide and narrow characters with ANSI", () => {
-    const writer = new PaddingWriter(10, null);
-    writer.write("\x1B[31m你\x1B[0ma");
-    writer.flush();
-    // Chinese char (2) + 'a' (1) = 3, need 7 spaces
-    expect(writer.toString()).toBe("\x1B[31m你\x1B[0ma       ");
-  });
-
-  it("should handle text longer than padding width", () => {
-    const writer = new PaddingWriter(5, null);
-    writer.write("foobar");
-    writer.flush();
-    // Text is longer than padding, should not add padding
-    expect(writer.toString()).toBe("foobar");
-  });
-
-  it("should handle exact width match", () => {
-    const writer = new PaddingWriter(6, null);
-    writer.write("foobar");
-    writer.flush();
-    expect(writer.toString()).toBe("foobar");
-  });
-
-  it("should handle newline at start", () => {
-    const writer = new PaddingWriter(5, null);
-    writer.write("\nfoo");
-    writer.flush();
-    expect(writer.toString()).toBe("\nfoo  ");
-  });
-
-  it("should handle multiple consecutive newlines", () => {
-    const writer = new PaddingWriter(5, null);
-    writer.write("a\n\nb");
-    writer.flush();
-    expect(writer.toString()).toBe("a    \n\nb    ");
-  });
-
-  it("should handle complex ANSI sequences", () => {
-    // Test with 256-color ANSI code
-    const writer = new PaddingWriter(10, null);
-    writer.write("\x1B[38;5;208mtest");
-    writer.flush();
-    expect(writer.toString()).toBe("\x1B[38;5;208mtest      ");
-  });
-
-  it("should handle custom padding with dots", () => {
-    const writer = new PaddingWriter(10, (count: number) => ".".repeat(count));
-    writer.write("test");
-    writer.flush();
-    expect(writer.toString()).toBe("test......");
-  });
-
-  it("should handle custom padding with multi-line", () => {
-    const writer = new PaddingWriter(6, (count: number) => "-".repeat(count));
-    writer.write("a\nb");
-    writer.flush();
-    expect(writer.toString()).toBe("a-----\nb-----");
+    it("should handle emoji correctly", () => {
+      const result = pad("😀", 4);
+      expect(result).toBe("😀  ");
+    });
   });
 });

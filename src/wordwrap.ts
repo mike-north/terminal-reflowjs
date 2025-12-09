@@ -1,5 +1,14 @@
+/**
+ * Word-wrap text at word boundaries.
+ *
+ * Wraps text at spaces, hyphens, or other configurable breakpoints,
+ * keeping words intact unless they exceed the line width.
+ *
+ * @packageDocumentation
+ */
+
 import stringWidth from "string-width";
-import { ANSI_MARKER, isTerminator } from "./ansi";
+import { ANSI_MARKER, isAnsiTerminator } from "./ansi";
 
 /**
  * Options for word wrapping.
@@ -18,24 +27,36 @@ const DEFAULT_BREAKPOINTS = [" ", "-"];
 const DEFAULT_NEWLINES = ["\n"];
 
 /**
- * Word-wrap writer that wraps text at word boundaries.
- * Reference: https://github.com/muesli/reflow/blob/master/wordwrap/wordwrap.go
+ * Word-wrap writer for streaming text processing.
+ *
+ * Wraps text at word boundaries (spaces, hyphens) while preserving
+ * ANSI escape sequences. Words are never broken unless they exceed
+ * the line width.
+ *
+ * @example
+ * ```ts
+ * const writer = new WordWrapWriter(40);
+ * writer.write("This is a long sentence that needs wrapping.");
+ * writer.close();
+ * console.log(writer.toString());
+ * ```
+ *
  * @public
  */
-export class WordWrap {
+export class WordWrapWriter {
   /** Maximum width per line (0 = unlimited) */
-  limit: number;
+  readonly limit: number;
   /** Characters considered breakpoints */
-  breakpoints: string[];
+  readonly breakpoints: string[];
   /** Characters treated as explicit newlines */
-  newline: string[];
+  readonly newline: string[];
   /** Whether to preserve explicit newlines */
-  keepNewlines: boolean;
+  readonly keepNewlines: boolean;
 
   private buf: string[] = [];
   private lineLen = 0;
   private ansi = false;
-  private space: string[] = []; // Buffer for whitespace (spaces/tabs only)
+  private space: string[] = [];
   private word: string[] = [];
   private wordLen = 0;
 
@@ -52,7 +73,6 @@ export class WordWrap {
   write(s: string): void {
     for (const c of s) {
       if (c === ANSI_MARKER) {
-        // Start of ANSI escape sequence - add to current word
         this.word.push(c);
         this.ansi = true;
         continue;
@@ -60,25 +80,19 @@ export class WordWrap {
 
       if (this.ansi) {
         this.word.push(c);
-        if (isTerminator(c)) {
+        if (isAnsiTerminator(c)) {
           this.ansi = false;
         }
         continue;
       }
 
       if (this.newline.includes(c)) {
-        // Newline character
         if (this.keepNewlines) {
-          // Flush word (space will be handled)
           this.flushWordAndSpace();
-          // Always output standard newline, regardless of which newline char was matched
           this.buf.push("\n");
           this.lineLen = 0;
         } else {
-          // Treat newline as a space when keepNewlines is false
-          // First flush any pending word
           this.flushWordOnly();
-          // Add space to buffer (like a regular space breakpoint)
           if (
             this.space.length === 0 ||
             this.space[this.space.length - 1] !== " "
@@ -90,17 +104,11 @@ export class WordWrap {
       }
 
       if (this.breakpoints.includes(c)) {
-        // Breakpoint character (space, hyphen, etc.)
-        // First flush any pending word
         this.flushWordOnly();
 
-        // Handle the breakpoint character
         if (c === " " || c === "\t") {
-          // Whitespace breakpoint - add to space buffer
           this.space.push(c);
         } else {
-          // Non-whitespace breakpoint (like hyphen, comma)
-          // First add any pending spaces
           if (this.space.length > 0) {
             const spaceStr = this.space.join("");
             const spaceWidth = stringWidth(spaceStr);
@@ -110,32 +118,27 @@ export class WordWrap {
             }
             this.space = [];
           }
-          // Then add the breakpoint character to the current line
           const charWidth = stringWidth(c);
           if (this.limit === 0 || this.lineLen + charWidth <= this.limit) {
             this.buf.push(c);
             this.lineLen += charWidth;
           }
-          // Start collecting spaces for potential line break
         }
         continue;
       }
 
-      // Regular character - add to word
       this.word.push(c);
       this.wordLen += stringWidth(c);
     }
   }
 
   /**
-   * Close the writer (flushes remaining content).
+   * Finalize the writer, flushing any remaining content.
    */
   close(): void {
     this.flushWordAndSpace();
 
-    // When keepNewlines is false, strip trailing whitespace
     if (!this.keepNewlines) {
-      // Remove trailing whitespace from buffer
       while (this.buf.length > 0) {
         const last = this.buf[this.buf.length - 1];
         if (last === " " || last === "\t") {
@@ -154,27 +157,18 @@ export class WordWrap {
     return this.buf.join("");
   }
 
-  /**
-   * Flush only the word, potentially adding space first.
-   * Used when we encounter another breakpoint.
-   */
   private flushWordOnly(): void {
-    if (this.word.length === 0) {
-      return;
-    }
+    if (this.word.length === 0) return;
 
     const spaceStr = this.space.join("");
     const spaceWidth = stringWidth(spaceStr);
 
-    // Check if word + space would fit on current line
     if (this.limit > 0 && this.lineLen > 0) {
       if (this.lineLen + spaceWidth + this.wordLen > this.limit) {
-        // Word doesn't fit - break line and drop the space
         this.buf.push("\n");
         this.lineLen = 0;
         this.space = [];
       } else {
-        // Word fits - add space first
         if (spaceWidth > 0) {
           this.buf.push(spaceStr);
           this.lineLen += spaceWidth;
@@ -182,11 +176,9 @@ export class WordWrap {
         this.space = [];
       }
     } else if (this.lineLen === 0) {
-      // At start of line - drop whitespace spaces, but keep if keeping newlines off
       if (!this.keepNewlines) {
         this.space = [];
       } else {
-        // Keep leading space/tab after newline
         if (spaceWidth > 0 && (this.limit === 0 || spaceWidth <= this.limit)) {
           this.buf.push(spaceStr);
           this.lineLen += spaceWidth;
@@ -194,7 +186,6 @@ export class WordWrap {
         this.space = [];
       }
     } else {
-      // No limit - just add space
       if (spaceWidth > 0) {
         this.buf.push(spaceStr);
         this.lineLen += spaceWidth;
@@ -202,7 +193,6 @@ export class WordWrap {
       this.space = [];
     }
 
-    // Add the word
     const wordStr = this.word.join("");
     this.buf.push(wordStr);
     this.lineLen += this.wordLen;
@@ -211,21 +201,15 @@ export class WordWrap {
     this.wordLen = 0;
   }
 
-  /**
-   * Flush word and any remaining space.
-   * Used at end of input or before newline.
-   */
   private flushWordAndSpace(): void {
     if (this.word.length > 0) {
       this.flushWordOnly();
     }
 
-    // Handle any trailing space
     if (this.space.length > 0) {
       const spaceStr = this.space.join("");
       const spaceWidth = stringWidth(spaceStr);
 
-      // Only add trailing space if it fits
       if (this.limit === 0 || this.lineLen + spaceWidth <= this.limit) {
         this.buf.push(spaceStr);
         this.lineLen += spaceWidth;
@@ -236,64 +220,32 @@ export class WordWrap {
 }
 
 /**
- * Creates a new WordWrap writer with the specified limit.
+ * Word-wrap a string to the specified width.
  *
- * @param limit - The maximum width for wrapped lines
- * @param options - Additional options
- * @returns A new WordWrap instance
- * @public
- */
-export function newWriter(
-  limit: number,
-  options: WordWrapOptions = {}
-): WordWrap {
-  return new WordWrap(limit, options);
-}
-
-/**
- * Word-wraps a string to the specified width.
- *
- * This is a convenience function that wraps text at word boundaries.
- * Words will not be broken unless they exceed the limit.
+ * Wraps text at word boundaries (spaces, hyphens), keeping words intact.
+ * This is the recommended function for most use cases.
  *
  * @param s - The string to wrap
- * @param limit - The maximum width for lines
- * @returns The wrapped text
+ * @param limit - Maximum line width
+ * @param options - Additional options
+ * @returns The wrapped string
  *
  * @example
  * ```ts
- * const result = wrapString("Hello World!", 5);
- * console.log(result);
- * // Hello
- * // World!
+ * const wrapped = wordwrap("Hello World, this is a test!", 10);
+ * // "Hello\nWorld,\nthis is a\ntest!"
  * ```
  *
  * @public
  */
-export function wrapString(s: string, limit: number): string {
-  const w = new WordWrap(limit);
+export function wordwrap(
+  s: string,
+  limit: number,
+  options?: WordWrapOptions
+): string {
+  const w = new WordWrapWriter(limit, options);
   w.write(s);
   w.close();
   return w.toString();
 }
 
-/**
- * Alias for wrapString for backwards compatibility.
- * @public
- */
-export function wordwrap(s: string, limit: number): string {
-  return wrapString(s, limit);
-}
-
-/**
- * Word-wraps a buffer to the specified width.
- *
- * @param b - The buffer to wrap
- * @param limit - The maximum width for lines
- * @returns The wrapped buffer
- * @public
- */
-export function wrapBytes(b: Buffer, limit: number): Buffer {
-  const result = wrapString(b.toString("utf8"), limit);
-  return Buffer.from(result, "utf8");
-}

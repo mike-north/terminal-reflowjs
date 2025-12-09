@@ -1,13 +1,22 @@
+/**
+ * ANSI escape sequence utilities.
+ *
+ * Provides helpers for detecting, parsing, and handling ANSI escape sequences
+ * while calculating visible string widths.
+ *
+ * @packageDocumentation
+ */
+
 import stringWidth from "string-width";
 
 /**
- * ANSI escape sequence marker character (ESC).
+ * ANSI escape sequence marker character (ESC = 0x1B).
  * @public
  */
 export const ANSI_MARKER = "\x1B";
 
 /**
- * ANSI reset sequence to clear formatting.
+ * ANSI reset sequence to clear all formatting.
  * @public
  */
 export const ANSI_RESET = "\x1b[0m";
@@ -15,7 +24,9 @@ export const ANSI_RESET = "\x1b[0m";
 /**
  * Check if a character is an ANSI sequence terminator.
  * Terminators are characters in the ranges A-Z (0x40-0x5a) and a-z (0x61-0x7a).
- * Reference: https://github.com/muesli/reflow/blob/master/ansi/ansi.go
+ *
+ * @param c - Single character to check
+ * @returns True if the character terminates an ANSI sequence
  * @public
  */
 export function isAnsiTerminator(c: string): boolean {
@@ -24,17 +35,12 @@ export function isAnsiTerminator(c: string): boolean {
 }
 
 /**
- * Alias for isAnsiTerminator retained for compatibility with indent module.
+ * Calculate the visible (printable) width of a string, ignoring ANSI escape sequences.
+ * Correctly handles East Asian wide characters.
+ *
+ * @param str - String to measure
+ * @returns The visible width in terminal columns
  * @public
- */
-export function isTerminator(c: string): boolean {
-  return isAnsiTerminator(c);
-}
-
-/**
- * Calculate printable width of a string, ignoring ANSI escape sequences.
- * Mirrors the Go implementation's behavior using string-width for
- * correct East Asian width handling.
  */
 export function printableRuneWidth(str: string): number {
   let visible = "";
@@ -60,17 +66,51 @@ export function printableRuneWidth(str: string): number {
 }
 
 /**
- * ANSI-aware writer that buffers output and keeps track of the last styling
- * sequence written. This mirrors the behavior of the Go implementation's
- * ansi.Writer used by truncate/margin/wrap.
+ * Strip all ANSI escape sequences from a string.
+ *
+ * @param str - String potentially containing ANSI sequences
+ * @returns String with all ANSI sequences removed
+ * @public
  */
-export class AnsiWriter {
+export function stripAnsi(str: string): string {
+  let result = "";
+  let inAnsi = false;
+
+  for (const ch of str) {
+    if (ch === ANSI_MARKER) {
+      inAnsi = true;
+      continue;
+    }
+
+    if (inAnsi) {
+      if (isAnsiTerminator(ch)) {
+        inAnsi = false;
+      }
+      continue;
+    }
+
+    result += ch;
+  }
+
+  return result;
+}
+
+/**
+ * ANSI-aware string buffer that tracks the last styling sequence written.
+ * Useful for building strings while maintaining ANSI state.
+ *
+ * @public
+ */
+export class AnsiBuffer {
   private output: string[] = [];
   private ansiSeq: string[] = [];
   private lastSeq: string[] = [];
   private inAnsi = false;
   private seqChanged = false;
 
+  /**
+   * Write content to the buffer.
+   */
   write(str: string): void {
     for (const ch of str) {
       if (ch === ANSI_MARKER) {
@@ -103,30 +143,37 @@ export class AnsiWriter {
     }
   }
 
+  /**
+   * Get the last ANSI style sequence that was written.
+   */
   getLastSequence(): string {
     return this.lastSeq.join("");
   }
 
+  /**
+   * Write an ANSI reset sequence if styling has changed.
+   */
   resetAnsi(): void {
     if (!this.seqChanged) return;
     this.output.push(ANSI_RESET);
   }
 
+  /**
+   * Get the buffer contents as a string.
+   */
   toString(): string {
     return this.output.join("");
   }
 }
 
 /**
- * Writer that tracks ANSI escape sequences and allows resetting/restoring them.
- * This is crucial for maintaining color/style state when adding indentation.
- * Reference: https://github.com/muesli/reflow/blob/master/ansi/writer.go
+ * ANSI-aware forwarding writer that tracks escape sequences.
+ * Useful for transforming text while preserving ANSI styling.
+ *
  * @public
  */
-export class WriterBase {
-  /** The underlying writer to forward output to */
-  forward: { write: (data: string) => void };
-
+export class AnsiPassthrough {
+  private forward: { write: (data: string) => void };
   private ansi = false;
   private ansiseq = "";
   private lastseq = "";
@@ -137,30 +184,23 @@ export class WriterBase {
   }
 
   /**
-   * Write content to the ANSI buffer.
-   * Tracks ANSI sequences and forwards processed output.
+   * Write content, tracking ANSI sequences and forwarding output.
    */
   write(data: string): void {
-    for (let i = 0; i < data.length; i++) {
-      const c = data[i];
-
+    for (const c of data) {
       if (c === ANSI_MARKER) {
-        // ANSI escape sequence start
         this.ansi = true;
         this.seqchanged = true;
         this.ansiseq += c;
       } else if (this.ansi) {
         this.ansiseq += c;
-        if (isTerminator(c)) {
-          // ANSI sequence terminated
+        if (isAnsiTerminator(c)) {
           this.ansi = false;
 
           if (this.ansiseq.endsWith("[0m")) {
-            // reset sequence
             this.lastseq = "";
             this.seqchanged = false;
           } else if (c === "m") {
-            // color code - save it
             this.lastseq = this.ansiseq;
           }
 
@@ -174,26 +214,25 @@ export class WriterBase {
   }
 
   /**
-   * Get the last ANSI sequence that was written
+   * Get the last ANSI style sequence that was written.
    */
-  lastSequence(): string {
+  getLastSequence(): string {
     return this.lastseq;
   }
 
   /**
-   * Write an ANSI reset sequence if there have been changes
+   * Write an ANSI reset sequence if styling has changed.
    */
   resetAnsi(): void {
-    if (!this.seqchanged) {
-      return;
-    }
+    if (!this.seqchanged) return;
     this.forward.write(ANSI_RESET);
   }
 
   /**
-   * Restore the last ANSI sequence
+   * Restore the last ANSI style sequence.
    */
   restoreAnsi(): void {
     this.forward.write(this.lastseq);
   }
 }
+

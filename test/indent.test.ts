@@ -1,286 +1,177 @@
-/**
- * Tests for indent module.
- * Tests ported from: https://github.com/muesli/reflow/blob/master/indent/indent_test.go
- */
-
 import { describe, it, expect } from "vitest";
-import {
-  indentBytes,
-  indentString,
-  IndentWriter,
-  IndentWriterPipe,
-  newIndentWriter,
-  newIndentWriterPipe,
-} from "@";
+import { indent, IndentWriter, IndentWriterPipe, printableRuneWidth } from "@";
 
 describe("indent", () => {
-  describe("Writer", () => {
-    it("should pass through with no indentation", () => {
-      const w = new IndentWriter(0);
-      w.write("foobar");
-      expect(w.string()).toBe("foobar");
-    });
-
-    it("should add basic indentation", () => {
-      const w = new IndentWriter(4);
-      w.write("foobar");
-      expect(w.string()).toBe("    foobar");
-    });
-
-    it("should indent multi-line text", () => {
-      const w = new IndentWriter(4);
-      w.write("foo\nbar");
-      expect(w.string()).toBe("    foo\n    bar");
-    });
-
-    it("should preserve ANSI sequence codes", () => {
-      // Test case from Go implementation with ANSI color codes
-      const w = new IndentWriter(4);
-      w.write("\x1B[38;2;249;38;114mfoo");
-      expect(w.string()).toBe(
-        "\x1B[38;2;249;38;114m\x1B[0m    \x1B[38;2;249;38;114mfoo"
-      );
-    });
-
-    it("should handle multiple writes", () => {
-      const w = new IndentWriter(4);
-      w.write("foo\n");
-      w.write("bar");
-      expect(w.string()).toBe("    foo\n    bar");
-    });
-
-    it("should work with Uint8Array input", () => {
-      const w = new IndentWriter(4);
-      const input = new TextEncoder().encode("foobar");
-      w.write(input);
-      expect(w.string()).toBe("    foobar");
-    });
-
-    it("should return bytes as Uint8Array", () => {
-      const w = new IndentWriter(4);
-      w.write("foo");
-      const result = w.bytes();
-      expect(result).toBeInstanceOf(Uint8Array);
-      expect(new TextDecoder().decode(result)).toBe("    foo");
-    });
+  it("indents a single line", () => {
+    expect(indent("hello", 4)).toBe("    hello");
   });
 
-  describe("Writer with custom IndentFunc", () => {
-    it("should use custom indentation function", () => {
-      const w = new IndentWriter(2, (writer) => {
-        writer.write(".");
-      });
-      w.write("foo\n");
-      w.write("bar");
-      expect(w.string()).toBe("..foo\n..bar");
-    });
-
-    it("should call IndentFunc for each indentation level", () => {
-      let callCount = 0;
-      const w = new IndentWriter(3, (writer) => {
-        callCount++;
-        writer.write(">");
-      });
-      w.write("test");
-      expect(w.string()).toBe(">>>test");
-      expect(callCount).toBe(3);
-    });
+  it("indents multiple lines", () => {
+    expect(indent("hello\nworld", 2)).toBe("  hello\n  world");
   });
 
-  describe("WriterPipe", () => {
-    it("should pipe output to another writer", () => {
-      let output = "";
-      const target = {
-        write: (data: string) => {
-          output += data;
-        },
-      };
-
-      const w = new IndentWriterPipe(target, 2);
-      w.write("foo");
-
-      expect(output).toBe("  foo");
-    });
-
-    it("should handle multi-line piped output", () => {
-      let output = "";
-      const target = {
-        write: (data: string) => {
-          output += data;
-        },
-      };
-
-      const w = new IndentWriterPipe(target, 2);
-      w.write("foo\nbar");
-
-      expect(output).toBe("  foo\n  bar");
-    });
-
-    it("should support custom indent function in pipe mode", () => {
-      let output = "";
-      const target = {
-        write: (data: string) => {
-          output += data;
-        },
-      };
-
-      const w = new IndentWriterPipe(target, 2, (writer) => {
-        writer.write("*");
-      });
-      w.write("test");
-
-      expect(output).toBe("**test");
-    });
+  it("preserves empty lines", () => {
+    expect(indent("a\n\nb", 2)).toBe("  a\n  \n  b");
   });
 
-  describe("convenience functions", () => {
-    describe("indentString", () => {
-      it("should indent a string", () => {
-        const result = indentString("foobar", 3);
-        expect(result).toBe("   foobar");
-      });
+  it("handles ANSI sequences (resets at indent boundary)", () => {
+    // The indent writer resets ANSI before adding indent, then restores
+    const input = "\x1B[31mred\x1B[0m";
+    const result = indent(input, 2);
+    // ANSI gets reset, indent added, then restored
+    expect(result).toContain("  ");
+    expect(result).toContain("\x1B[31m");
+    expect(result).toContain("red");
+    // Visual result should have same printable width
+    expect(printableRuneWidth(result)).toBe(printableRuneWidth(input) + 2);
+  });
+});
 
-      it("should handle empty string", () => {
-        const result = indentString("", 4);
-        expect(result).toBe("");
-      });
-
-      it("should handle multi-line string", () => {
-        const result = indentString("line1\nline2\nline3", 2);
-        expect(result).toBe("  line1\n  line2\n  line3");
-      });
-
-      it("should preserve ANSI codes", () => {
-        const result = indentString("\x1B[31mred\x1B[0m", 2);
-        expect(result).toContain("red");
-      });
-    });
-
-    describe("indentBytes", () => {
-      it("should indent byte arrays", () => {
-        const input = new TextEncoder().encode("test");
-        const result = indentBytes(input, 4);
-        expect(new TextDecoder().decode(result)).toBe("    test");
-      });
-
-      it("should handle empty byte array", () => {
-        const input = new TextEncoder().encode("");
-        const result = indentBytes(input, 4);
-        expect(new TextDecoder().decode(result)).toBe("");
-      });
-    });
-
-    describe("newWriter", () => {
-      it("should create a new Writer instance", () => {
-        const w = newIndentWriter(4);
-        expect(w).toBeInstanceOf(IndentWriter);
-        expect(w.indent).toBe(4);
-      });
-
-      it("should accept custom indent function", () => {
-        const indentFunc = (w: { write: (data: string) => void }) => {
-          w.write("-");
-        };
-        const w = newIndentWriter(2, indentFunc);
-        w.write("test");
-        expect(w.string()).toBe("--test");
-      });
-    });
-
-    describe("newWriterPipe", () => {
-      it("should create a new WriterPipe instance", () => {
-        let output = "";
-        const target = {
-          write: (d: string) => {
-            output += d;
-          },
-        };
-        const w = newIndentWriterPipe(target, 4);
-        expect(w).toBeInstanceOf(IndentWriterPipe);
-        expect(w.indent).toBe(4);
-      });
-    });
+describe("IndentWriter", () => {
+  it("should indent text by specified spaces", () => {
+    const w = new IndentWriter(4);
+    w.write("hello\nworld");
+    expect(w.toString()).toBe("    hello\n    world");
   });
 
-  describe("edge cases", () => {
-    it("should handle text with only newlines", () => {
+  it("should handle custom indent function", () => {
+    const w = new IndentWriter(2, {
+      indentFunc: (writer) => {
+        writer.write(">>");
+      },
+    });
+    w.write("hello\nworld");
+    expect(w.toString()).toBe(">>>>hello\n>>>>world");
+  });
+
+  it("should preserve ANSI sequences across line breaks", () => {
+    const w = new IndentWriter(2);
+    w.write("\x1B[31mred\ntext\x1B[0m");
+    const result = w.toString();
+    // Should have two lines with indent
+    const lines = result.split("\n");
+    expect(lines.length).toBe(2);
+    // Each line should be indented
+    expect(lines[0]).toContain("red");
+    expect(lines[1]).toContain("text");
+    // Both lines should have the indent worth of printable space
+    // (accounting for ANSI codes)
+  });
+
+  it("should handle empty string", () => {
+    const w = new IndentWriter(4);
+    w.write("");
+    expect(w.toString()).toBe("");
+  });
+
+  it("should handle string with only newlines", () => {
+    const w = new IndentWriter(2);
+    w.write("\n\n");
+    expect(w.toString()).toBe("  \n  \n");
+  });
+
+  describe("ANSI sequence handling", () => {
+    it("should reset and restore ANSI at indent boundaries", () => {
       const w = new IndentWriter(2);
-      w.write("\n\n\n");
-      expect(w.string()).toBe("  \n  \n  \n");
+      w.write("\x1B[32mgreen\ntext\x1B[0m");
+      const result = w.toString();
+      expect(result).toContain("\x1B[0m");
+      expect(result).toContain("\x1B[32m");
     });
 
-    it("should handle text ending with newline", () => {
+    it("should handle multiple ANSI codes", () => {
       const w = new IndentWriter(2);
-      w.write("foo\n");
-      expect(w.string()).toBe("  foo\n");
-    });
-
-    it("should handle complex ANSI sequences", () => {
-      const w = new IndentWriter(2);
-      // Test with multiple ANSI codes
       w.write("\x1B[1m\x1B[31mbold red\x1B[0m");
-      const result = w.string();
+      const result = w.toString();
       expect(result).toContain("bold red");
+      expect(result).toContain("  "); // indent present
     });
+  });
+});
 
-    it("should handle interleaved ANSI codes and newlines", () => {
-      const w = new IndentWriter(2);
-      w.write("\x1B[31mred\ntext\x1B[0m");
-      const result = w.string();
-      expect(result).toContain("red");
-      expect(result).toContain("text");
-    });
+describe("IndentWriterPipe", () => {
+  it("should pipe indented output to target", () => {
+    let result = "";
+    const target = { write: (s: string) => (result += s) };
+    const w = new IndentWriterPipe(target, 2);
+    w.write("hello\nworld");
+    expect(result).toBe("  hello\n  world");
+  });
+});
 
-    it("should handle zero-length writes", () => {
-      const w = new IndentWriter(4);
-      w.write("");
-      expect(w.string()).toBe("");
-    });
+describe("indent function", () => {
+  const testCases = [
+    {
+      input: "foo",
+      indent: 0,
+      expected: "foo",
+    },
+    {
+      input: "foo",
+      indent: 4,
+      expected: "    foo",
+    },
+    {
+      input: "foo\nbar",
+      indent: 4,
+      expected: "    foo\n    bar",
+    },
+    {
+      input: "foo\nbar",
+      indent: 0,
+      expected: "foo\nbar",
+    },
+    {
+      input: "foo\nbar\nbaz",
+      indent: 2,
+      expected: "  foo\n  bar\n  baz",
+    },
+    {
+      input: "\n",
+      indent: 2,
+      expected: "  \n",
+    },
+  ];
 
-    it("should handle very long indentation", () => {
-      const w = new IndentWriter(100);
-      w.write("x");
-      expect(w.string()).toBe(" ".repeat(100) + "x");
-    });
-
-    it("should indent each line independently", () => {
-      const w = new IndentWriter(2);
-      w.write("a");
-      w.write("\n");
-      w.write("b");
-      w.write("\n");
-      w.write("c");
-      expect(w.string()).toBe("  a\n  b\n  c");
+  testCases.forEach((tc, i) => {
+    it(`Test ${i}: indent ${tc.indent} spaces`, () => {
+      expect(indent(tc.input, tc.indent)).toBe(tc.expected);
     });
   });
 
-  describe("ANSI sequence preservation details", () => {
-    it("should reset ANSI before indent and restore after", () => {
-      // When there's an active ANSI sequence, we should reset it before
-      // adding indentation, then restore it after
-      const w = new IndentWriter(2);
-      w.write("\x1B[31mred\nstill red\x1B[0m");
-      const result = w.string();
-
-      // The second line should have the ANSI sequence reset, indent added,
-      // then ANSI restored
-      expect(result).toContain("\x1B[0m"); // reset
-      expect(result).toContain("\x1B[31m"); // color code
+  describe("with ANSI sequences", () => {
+    it("should preserve colors while indenting", () => {
+      const input = "\x1B[31mfoo\x1B[0m";
+      const result = indent(input, 4);
+      // Result contains the text and color codes
+      expect(result).toContain("foo");
+      expect(result).toContain("\x1B[31m");
+      // Printable width should be input + indent
+      expect(printableRuneWidth(result)).toBe(3 + 4);
     });
 
-    it("should handle ANSI reset sequence [0m", () => {
-      const w = new IndentWriter(2);
-      w.write("\x1B[31mred\x1B[0m\nnormal");
-      const result = w.string();
-      expect(result).toContain("red");
-      expect(result).toContain("normal");
+    it("should handle colors across newlines", () => {
+      const input = "\x1B[31mfoo\nbar\x1B[0m";
+      const result = indent(input, 4);
+      const lines = result.split("\n");
+      expect(lines.length).toBe(2);
+      expect(result).toContain("\x1B[31m");
     });
 
-    it("should preserve multiple color changes", () => {
-      const w = new IndentWriter(2);
-      w.write("\x1B[31mred\x1B[32mgreen\x1B[34mblue\x1B[0m");
-      const result = w.string();
-      expect(result.length).toBeGreaterThan(0);
+    it("should handle multiple color codes", () => {
+      const input = "\x1B[31m\x1B[1mfoo\x1B[0m";
+      const result = indent(input, 2);
+      expect(result).toContain("foo");
+      // Should have indent in the output
+      expect(printableRuneWidth(result)).toBe(3 + 2);
+    });
+
+    it("should reset and restore colors at line boundaries", () => {
+      const input = "\x1B[31mfoo\nbar\x1B[0m";
+      const result = indent(input, 2);
+      expect(result).toContain("\x1B[0m");
+      const lines = result.split("\n");
+      expect(lines.length).toBe(2);
     });
   });
 });

@@ -1,132 +1,72 @@
 /**
- * Writer interface for truncate text processing.
+ * Truncate text to a specified width.
  *
- * Compatible with io.Writer patterns from Go.
+ * Shortens text to fit within a maximum width, optionally adding
+ * an ellipsis or other tail indicator.
  *
- * @public
+ * @packageDocumentation
  */
-export interface TruncateWriter {
-  /**
-   * Writes a string to the output.
-   * @param s - The string to write
-   */
-  write(s: string): void;
 
-  /**
-   * Returns the truncated string result.
-   */
-  toString(): string;
-}
+import stringWidth from "string-width";
+import {
+  ANSI_MARKER,
+  AnsiBuffer,
+  isAnsiTerminator,
+  printableRuneWidth,
+} from "./ansi";
 
 /**
  * Options for truncation.
  * @public
  */
 export interface TruncateOptions {
-  /** The maximum width for the truncated text */
-  width?: number;
   /** The suffix to add when truncating (e.g., '...') */
   tail?: string;
 }
 
 /**
- * Creates a new truncate writer with the specified width.
+ * Truncate writer for streaming text processing.
  *
- * @param width - The maximum width for truncated text
- * @param tail - Optional tail string to append when truncating
- * @returns A new TruncateWriter instance
- * @throws {@link Error} Not yet implemented
- * @public
- */
-export function newWriter(width: number, tail?: string): TruncateWriter {
-  return new TruncateWriterImpl(width, tail);
-}
-
-/**
- * Truncates a string to the specified width.
- *
- * This is a convenience function that truncates text without
- * adding a tail indicator.
- *
- * @param s - The string to truncate
- * @param width - The maximum width
- * @returns The truncated text
- * @throws {@link Error} Not yet implemented
+ * Truncates text to a maximum width while preserving ANSI escape sequences.
+ * Optionally appends a tail (like "...") when content is truncated.
  *
  * @example
  * ```ts
- * const result = truncate("Hello World!", 7);
- * console.log(result);
- * // "Hello W"
+ * const writer = new TruncateWriter(20, { tail: "..." });
+ * writer.write("This is a very long string that needs truncating");
+ * console.log(writer.toString());
+ * // "This is a very lo..."
  * ```
  *
  * @public
  */
-export function truncate(s: string, width: number): string {
-  return truncateWithTail(s, width, "");
-}
+export class TruncateWriter {
+  /** Maximum width for the output */
+  readonly width: number;
+  /** Tail string to append when truncating */
+  readonly tail: string;
 
-/**
- * Truncates a string to the specified width with a custom tail.
- *
- * The tail string is included within the width limit, so the
- * actual content will be shorter to accommodate the tail.
- *
- * @param s - The string to truncate
- * @param width - The maximum width (including tail)
- * @param tail - The suffix to add when truncating
- * @returns The truncated text with tail
- * @throws {@link Error} Not yet implemented
- *
- * @example
- * ```ts
- * const result = truncateWithTail("Hello World!", 9, "...");
- * console.log(result);
- * // "Hello ..."
- * ```
- *
- * @public
- */
-export function truncateWithTail(
-  s: string,
-  width: number,
-  tail: string
-): string {
-  const writer = new TruncateWriterImpl(width, tail);
-  writer.write(s);
-  return writer.toString();
-}
-
-import stringWidth from "string-width";
-import {
-  ANSI_MARKER,
-  AnsiWriter,
-  isAnsiTerminator,
-  printableRuneWidth,
-} from "./ansi";
-
-/**
- * Writer class for truncating text to a specified width.
- * Mirrors the behavior of Go's truncate.Writer while adapting to strings.
- */
-class TruncateWriterImpl implements TruncateWriter {
-  private width: number;
-  private tail: string;
-  private ansiWriter: AnsiWriter;
+  private ansiBuffer: AnsiBuffer;
   private inAnsi = false;
+  private truncated = false;
 
-  constructor(width: number, tail = "") {
+  constructor(width: number, options: TruncateOptions = {}) {
     this.width = width;
-    this.tail = tail;
-    this.ansiWriter = new AnsiWriter();
+    this.tail = options.tail ?? "";
+    this.ansiBuffer = new AnsiBuffer();
   }
 
+  /**
+   * Write content to the truncate buffer.
+   */
   write(content: string): void {
+    if (this.truncated) return;
+
     const tailWidth = printableRuneWidth(this.tail);
 
-    // If tail is wider than available width, write only the tail.
     if (this.width < tailWidth) {
-      this.ansiWriter.write(this.tail);
+      this.ansiBuffer.write(this.tail);
+      this.truncated = true;
       return;
     }
 
@@ -145,18 +85,55 @@ class TruncateWriterImpl implements TruncateWriter {
       }
 
       if (currentWidth > availableWidth) {
-        this.ansiWriter.write(this.tail);
-        if (this.ansiWriter.getLastSequence() !== "") {
-          this.ansiWriter.resetAnsi();
+        this.ansiBuffer.write(this.tail);
+        if (this.ansiBuffer.getLastSequence() !== "") {
+          this.ansiBuffer.resetAnsi();
         }
+        this.truncated = true;
         return;
       }
 
-      this.ansiWriter.write(ch);
+      this.ansiBuffer.write(ch);
     }
   }
 
+  /**
+   * Get the truncated result as a string.
+   */
   toString(): string {
-    return this.ansiWriter.toString();
+    return this.ansiBuffer.toString();
   }
 }
+
+/**
+ * Truncate a string to the specified width.
+ *
+ * Shortens text to fit within a maximum width. Use the `tail` option
+ * to add an indicator like "..." when content is truncated.
+ *
+ * @param s - The string to truncate
+ * @param width - Maximum width (including tail)
+ * @param options - Truncation options
+ * @returns The truncated string
+ *
+ * @example
+ * ```ts
+ * truncate("Hello World", 8);
+ * // "Hello Wo"
+ *
+ * truncate("Hello World", 8, { tail: "..." });
+ * // "Hello..."
+ * ```
+ *
+ * @public
+ */
+export function truncate(
+  s: string,
+  width: number,
+  options?: TruncateOptions
+): string {
+  const writer = new TruncateWriter(width, options);
+  writer.write(s);
+  return writer.toString();
+}
+

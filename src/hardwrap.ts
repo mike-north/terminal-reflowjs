@@ -1,14 +1,21 @@
+/**
+ * Hard-wrap text at exact character boundaries.
+ *
+ * Wraps text at exact character limits, breaking words if necessary.
+ * Use this when you need strict width enforcement.
+ *
+ * @packageDocumentation
+ */
+
 import stringWidth from "string-width";
-import { ANSI_MARKER, isTerminator } from "./ansi";
+import { ANSI_MARKER, isAnsiTerminator } from "./ansi";
 
 /**
  * Options for hard wrapping.
  * @public
  */
-export interface WrapOptions {
-  /** The maximum width for wrapped lines */
-  limit?: number;
-  /** Output newline sequence */
+export interface HardWrapOptions {
+  /** Output newline sequence (default: "\n") */
   newline?: string;
   /** Whether to preserve existing newlines (default: true) */
   keepNewlines?: boolean;
@@ -19,28 +26,38 @@ export interface WrapOptions {
 }
 
 /**
- * Hard-wrap writer that wraps text at exact character limits.
- * Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go
+ * Hard-wrap writer for streaming text processing.
+ *
+ * Wraps text at exact character limits, breaking words if necessary.
+ * Preserves ANSI escape sequences without counting them toward width.
+ *
+ * @example
+ * ```ts
+ * const writer = new HardWrapWriter(40);
+ * writer.write("This will be wrapped at exactly 40 characters.");
+ * console.log(writer.toString());
+ * ```
+ *
  * @public
  */
-export class Writer {
+export class HardWrapWriter {
   /** Maximum width per line (0 = unlimited) */
-  limit: number;
+  readonly limit: number;
   /** Output newline sequence */
-  newline: string;
+  readonly newline: string;
   /** Whether to preserve existing newlines */
-  keepNewlines: boolean;
+  readonly keepNewlines: boolean;
   /** Whether to preserve leading space after wrap */
-  preserveSpace: boolean;
+  readonly preserveSpace: boolean;
   /** Width of tab characters */
-  tabWidth: number;
+  readonly tabWidth: number;
 
   private buf: string[] = [];
   private lineLen = 0;
   private ansi = false;
 
-  constructor(options: WrapOptions = {}) {
-    this.limit = options.limit ?? 80;
+  constructor(limit: number, options: HardWrapOptions = {}) {
+    this.limit = limit;
     this.newline = options.newline ?? "\n";
     this.keepNewlines = options.keepNewlines ?? true;
     this.preserveSpace = options.preserveSpace ?? false;
@@ -51,16 +68,13 @@ export class Writer {
    * Write content to the hard wrapper.
    */
   write(s: string): void {
-    // Determine newline characters to recognize in input
     const newlineChars = new Set(["\n", "\r"]);
-    // Also recognize chars from the output newline string
     for (const c of this.newline) {
       newlineChars.add(c);
     }
 
     for (const c of s) {
       if (c === ANSI_MARKER) {
-        // Start of ANSI escape sequence
         this.buf.push(c);
         this.ansi = true;
         continue;
@@ -68,13 +82,12 @@ export class Writer {
 
       if (this.ansi) {
         this.buf.push(c);
-        if (isTerminator(c)) {
+        if (isAnsiTerminator(c)) {
           this.ansi = false;
         }
         continue;
       }
 
-      // Check if this character is a newline
       if (newlineChars.has(c)) {
         if (this.keepNewlines) {
           this.buf.push(this.newline);
@@ -83,20 +96,15 @@ export class Writer {
         continue;
       }
 
-      // Handle tabs - expand to spaces
       if (c === "\t" && this.tabWidth > 0) {
-        // Calculate how many spaces the tab represents (up to tabWidth)
-        const spacesToAdd = this.tabWidth;
-        let remaining = spacesToAdd;
+        let remaining = this.tabWidth;
 
         while (remaining > 0) {
-          // Check if we need to wrap before adding this space
           if (this.limit > 0 && this.lineLen >= this.limit) {
             this.buf.push(this.newline);
             this.lineLen = 0;
 
             if (!this.preserveSpace) {
-              // Skip remaining spaces from the tab
               break;
             }
           }
@@ -110,19 +118,15 @@ export class Writer {
 
       const charWidth = stringWidth(c);
 
-      // Check if we would exceed limit
       if (this.limit > 0 && this.lineLen + charWidth > this.limit) {
-        // Need to wrap
         this.buf.push(this.newline);
         this.lineLen = 0;
 
-        // Skip leading space if preserveSpace is false
         if (!this.preserveSpace && c === " ") {
           continue;
         }
       }
 
-      // Write the character
       this.buf.push(c);
       this.lineLen += charWidth;
     }
@@ -137,64 +141,32 @@ export class Writer {
 }
 
 /**
- * Creates a new hard-wrap writer with the specified limit.
+ * Hard-wrap a string to the specified width.
  *
- * @param limit - The maximum width for wrapped lines
- * @returns A new Writer instance
- * @public
- */
-export function newWriter(limit: number): Writer {
-  return new Writer({ limit });
-}
-
-/**
- * Hard-wraps a string to the specified width.
- *
- * This is a convenience function that wraps text at exact character
- * boundaries, regardless of word breaks.
+ * Wraps text at exact character boundaries, breaking words if necessary.
+ * This is the recommended function for strict width enforcement.
  *
  * @param s - The string to wrap
- * @param limit - The exact width for lines
+ * @param limit - Maximum line width
  * @param options - Additional options
- * @returns The wrapped text
+ * @returns The wrapped string
  *
  * @example
  * ```ts
- * const result = wrapString("Hello World!", 7);
- * console.log(result);
- * // Hello W
- * // orld!
+ * const wrapped = hardwrap("HelloWorld", 4);
+ * // "Hell\noWor\nld"
  * ```
  *
  * @public
  */
-export function wrapString(
+export function hardwrap(
   s: string,
   limit: number,
-  options: Omit<WrapOptions, "limit"> = {}
+  options?: HardWrapOptions
 ): string {
-  const w = new Writer({ ...options, limit });
+  const w = new HardWrapWriter(limit, options);
   w.write(s);
   return w.toString();
 }
 
-/**
- * Alias for wrapString for backwards compatibility.
- * @public
- */
-export function wrap(s: string, limit: number): string {
-  return wrapString(s, limit);
-}
 
-/**
- * Hard-wraps a buffer to the specified width.
- *
- * @param b - The buffer to wrap
- * @param limit - The maximum width for lines
- * @returns The wrapped buffer
- * @public
- */
-export function wrapBytes(b: Buffer, limit: number): Buffer {
-  const result = wrapString(b.toString("utf8"), limit);
-  return Buffer.from(result, "utf8");
-}

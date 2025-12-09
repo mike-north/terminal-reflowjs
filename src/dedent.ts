@@ -1,15 +1,19 @@
+/**
+ * Remove common leading whitespace from text.
+ *
+ * Detects the minimum indentation across all lines and removes it,
+ * effectively "dedenting" the text.
+ *
+ * @packageDocumentation
+ */
+
 import { ANSI_MARKER } from "./ansi";
 
-/**
- * Count the number of leading whitespace characters (spaces or tabs) in a line.
- * Stops counting at the first non-whitespace character or ANSI sequence.
- */
 function countLeadingWhitespace(line: string): number {
   let count = 0;
 
   for (const ch of line) {
     if (ch === ANSI_MARKER) {
-      // ANSI sequence starts - stop counting whitespace
       break;
     }
 
@@ -23,9 +27,6 @@ function countLeadingWhitespace(line: string): number {
   return count;
 }
 
-/**
- * Check if a line contains only whitespace (or is empty).
- */
 function isBlankLine(line: string): boolean {
   for (const ch of line) {
     if (ch !== " " && ch !== "\t") {
@@ -36,25 +37,23 @@ function isBlankLine(line: string): boolean {
 }
 
 /**
- * Removes common leading whitespace from text.
+ * Remove common leading whitespace from text.
  *
  * Detects the minimum indentation (count of leading whitespace characters)
  * across all non-empty lines and removes that many characters from each line.
- * Empty lines and lines containing only whitespace are preserved but have
- * their whitespace stripped.
+ * Whitespace-only lines are stripped entirely.
  *
  * @param s - The text to dedent
  * @returns The dedented text
  *
  * @example
  * ```ts
- * const input = `    Hello World!
- *   Hello World!
+ * const text = `
+ *     Hello
+ *     World
  * `;
- * const result = dedent(input);
- * console.log(result);
- * //   Hello World!
- * // Hello World!
+ * dedent(text);
+ * // "\nHello\nWorld\n"
  * ```
  *
  * @public
@@ -62,11 +61,9 @@ function isBlankLine(line: string): boolean {
 export function dedent(s: string): string {
   const lines = s.split("\n");
 
-  // Find minimum indentation across all non-blank lines
   let minIndent = Number.POSITIVE_INFINITY;
 
   for (const line of lines) {
-    // Skip empty lines and whitespace-only lines
     if (line === "" || isBlankLine(line)) {
       continue;
     }
@@ -74,30 +71,24 @@ export function dedent(s: string): string {
     const indent = countLeadingWhitespace(line);
     minIndent = Math.min(minIndent, indent);
 
-    // Early exit if no indentation
     if (minIndent === 0) {
       break;
     }
   }
 
-  // If no common indentation found (all lines empty/blank or no indent), return as-is
   if (!Number.isFinite(minIndent) || minIndent === 0) {
     return s;
   }
 
-  // Remove the common indentation from each line
   const result = lines.map((line) => {
-    // Empty lines stay empty
     if (line === "") {
       return line;
     }
 
-    // Whitespace-only lines get fully stripped
     if (isBlankLine(line)) {
       return "";
     }
 
-    // Remove minIndent characters from the beginning
     return line.slice(minIndent);
   });
 
