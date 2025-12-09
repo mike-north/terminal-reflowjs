@@ -1,20 +1,50 @@
 {
   "name": "terminal-reflowjs",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.0",
+  "description": "ANSI-aware text reflow utilities for terminal output - word wrapping, truncation, padding, indentation, and more",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mike-north/terminal-reflowjs.git"
+  },
+  "homepage": "https://github.com/mike-north/terminal-reflowjs#readme",
+  "bugs": {
+    "url": "https://github.com/mike-north/terminal-reflowjs/issues"
+  },
   "scripts": {
     "generate:api-report": "api-extractor run --local",
     "generate:docs": "api-documenter markdown --input temp --output docs",
-    "check:api-report": "api-extractor check",
+    "check:api-report": "api-extractor run",
+    "check:lint": "eslint .",
     "build": "tsc --project tsconfig.build.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "terminal",
+    "ansi",
+    "text",
+    "wrap",
+    "wordwrap",
+    "truncate",
+    "padding",
+    "indent",
+    "dedent",
+    "reflow",
+    "cli"
+  ],
+  "author": "Mike North",
   "license": "MIT",
   "packageManager": "pnpm@10.15.0",
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.2",
+    "@changesets/cli": "^2.29.8",
     "@eslint/js": "^9.39.1",
     "@microsoft/api-documenter": "^7.28.2",
     "@microsoft/api-extractor": "^7.55.2",

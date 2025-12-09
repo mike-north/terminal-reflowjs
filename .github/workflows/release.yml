@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: npm-publish
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Create Release PR or Publish to npm
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          publish: pnpm changeset publish
+          commit: "ci: version packages"
+          title: "ci: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          # Get the list of published packages
+          PUBLISHED_PACKAGES='${{ steps.changesets.outputs.publishedPackages }}'
+          
+          echo "Published packages:"
+          echo "${PUBLISHED_PACKAGES}" | jq -r '.[] | "- \(.name)@\(.version)"'
+          
+          # For a single package repo, use the version as the tag
+          VERSION=$(echo "${PUBLISHED_PACKAGES}" | jq -r '.[0].version')
+          PACKAGE_NAME=$(echo "${PUBLISHED_PACKAGES}" | jq -r '.[0].name')
+          RELEASE_TAG="v${VERSION}"
+          RELEASE_NAME="${PACKAGE_NAME} v${VERSION}"
+          
+          echo "Release tag: ${RELEASE_TAG}"
+          echo "Release name: ${RELEASE_NAME}"
+          
+          # Build release notes
+          cat << 'EOF' > release_notes.md
+          ## Published Package
+          
+          EOF
+          
+          echo "- [${PACKAGE_NAME}](https://www.npmjs.com/package/${PACKAGE_NAME}/v/${VERSION}) - \`${VERSION}\`" >> release_notes.md
+          
+          cat << 'EOF' >> release_notes.md
+          
+          ## Installation
+          
+          ```bash
+          EOF
+          
+          echo "npm install ${PACKAGE_NAME}@${VERSION}" >> release_notes.md
+          
+          cat << 'EOF' >> release_notes.md
+          ```
+          
+          See [CHANGELOG.md](https://github.com/mike-north/terminal-reflowjs/blob/main/CHANGELOG.md) for full release notes.
+          EOF
+          
+          # Create the GitHub release
+          gh release create "${RELEASE_TAG}" \
+            --title "${RELEASE_NAME}" \
+            --notes-file release_notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
