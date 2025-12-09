@@ -17,12 +17,11 @@ const defaultNewline = ["\n"];
 class AnsiBuffer {
   private buffer: string = "";
 
+  /**
+   * Append a string or character to the buffer
+   */
   write(s: string): void {
     this.buffer += s;
-  }
-
-  writeRune(c: string): void {
-    this.buffer += c;
   }
 
   reset(): void {
@@ -148,6 +147,8 @@ export class WordWrap {
 
     let str = s;
     if (!this.keepNewlines) {
+      // When keepNewlines is false, trim whitespace and replace newlines with spaces
+      // Reference: https://github.com/muesli/reflow/blob/master/wordwrap/wordwrap.go#L97-L99
       str = s.trim().replace(/\n/g, " ");
     }
 
@@ -155,10 +156,10 @@ export class WordWrap {
     for (const c of str) {
       if (c === "\x1B") {
         // ANSI escape sequence
-        this.word.writeRune(c);
+        this.word.write(c);
         this.ansi = true;
       } else if (this.ansi) {
-        this.word.writeRune(c);
+        this.word.write(c);
         if (isAnsiTerminator(c)) {
           // ANSI sequence terminated
           this.ansi = false;
@@ -187,9 +188,10 @@ export class WordWrap {
         this.addSpace();
         this.addWord();
         this.buf += c;
+        this.lineLen++;
       } else {
         // Any other character
-        this.word.writeRune(c);
+        this.word.write(c);
 
         // Add a line break if the current word would exceed the line's
         // character limit
