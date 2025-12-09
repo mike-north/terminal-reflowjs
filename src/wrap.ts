@@ -180,7 +180,11 @@ export class Writer {
 
   /**
    * Check if a character is a newline
-   * Checks if the character matches any character in the newline string
+   * Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go#L124-L130
+   * 
+   * This checks if the character matches any character in the newline string.
+   * For example, if newline is "\r\n", this will match both '\r' and '\n' individually.
+   * This matches the Go implementation's behavior with []rune newlines.
    */
   private isNewline(char: string): boolean {
     // Check each character in the newline string

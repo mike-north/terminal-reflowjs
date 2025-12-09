@@ -155,6 +155,18 @@ describe("wrap", () => {
       });
       expect(result).toBe("foo\r\nbar");
     });
+
+    it("should treat each character in newline string as a newline", () => {
+      // When newline is "\r\n", both \r and \n in input should be treated as newlines
+      const writer = new Writer({
+        limit: 10,
+        newline: "\r\n",
+        keepNewlines: true,
+      });
+      writer.write("foo\rbar\nbaz");
+      // Both \r and \n should trigger new lines
+      expect(writer.toString()).toBe("foo\r\nbar\r\nbaz");
+    });
   });
 
   describe("wrapBytes", () => {
