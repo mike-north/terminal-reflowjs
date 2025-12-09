@@ -12,6 +12,9 @@ declare namespace ansi {
     }
 }
 
+// @public
+function bytes(content: Buffer, width: number): Buffer;
+
 declare namespace dedent {
     export {
         dedent_2 as dedent
@@ -51,7 +54,7 @@ function isTerminator(c: string): boolean;
 
 declare namespace margin {
     export {
-        newWriter_6 as newWriter,
+        newWriter_5 as newWriter,
         margin_2 as margin,
         MarginWriter,
         MarginOptions
@@ -97,59 +100,46 @@ function newWriter_3(indent: number, indentFunc?: IndentFunc): Writer_2;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
 // @public
-function newWriter_4(width: number, paddingFunc: PaddingFunc | null): PaddingWriter;
+function newWriter_4(width: number, tail?: string): TruncateWriter;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
 // @public
-function newWriter_5(width: number, tail?: string): TruncateWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_6(width: number, options?: MarginOptions): MarginWriter;
+function newWriter_5(width: number, options?: MarginOptions): MarginWriter;
 
 // @public
 function newWriterPipe(forward: {
     write: (data: string) => void;
 }, indent: number, indentFunc?: IndentFunc): WriterPipe;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function pad(s: string, width: number): string;
-
 declare namespace padding {
     export {
-        newWriter_4 as newWriter,
-        pad,
+        bytes,
+        string,
         PaddingFunc,
-        PaddingWriter,
-        PaddingOptions
+        PaddingWriter
     }
 }
 
 // @public
-type PaddingFunc = (writer: {
-    write(s: string): void;
-}) => void;
+type PaddingFunc = (count: number) => string;
 
 // @public
-interface PaddingOptions {
-    paddingFunc?: PaddingFunc;
-    width?: number;
-}
-
-// @public
-interface PaddingWriter {
+class PaddingWriter {
+    constructor(width: number, paddingFunc?: PaddingFunc | null);
+    bytes(): Buffer;
     close(): void;
+    flush(): void;
     toString(): string;
-    write(s: string): void;
+    write(content: string): number;
 }
+
+// @public
+function string(content: string, width: number): string;
 
 declare namespace truncate {
     export {
-        newWriter_5 as newWriter,
+        newWriter_4 as newWriter,
         truncate_2 as truncate,
         truncateWithTail,
         TruncateWriter,
