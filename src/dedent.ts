@@ -14,6 +14,9 @@
  * Empty lines (containing only whitespace and newlines) are ignored.
  * Tabs and spaces both count as one character of indentation.
  * 
+ * Uses character-by-character iteration to match the Go implementation exactly,
+ * which allows handling mixed whitespace (spaces and tabs) correctly.
+ * 
  * Reference: minIndent() in https://github.com/muesli/reflow/blob/master/dedent/dedent.go
  * 
  * @param s - The input string to analyze
@@ -117,6 +120,11 @@ function dedent(s: string, indent: number): string {
  * @public
  */
 export function dedentString(s: string): string {
+  // Early return for empty strings
+  if (s.length === 0) {
+    return s;
+  }
+
   const indent = minIndent(s);
   if (indent === 0) {
     return s;
