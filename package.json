@@ -1,6 +1,6 @@
 {
   "name": "terminal-reflowjs",
-  "version": "0.0.0",
+  "version": "0.0.0-alpha.0",
   "description": "ANSI-aware text reflow utilities for terminal output - word wrapping, truncation, padding, indentation, and more",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
