@@ -36,11 +36,13 @@ export function ansiString(): string {
  *
  * @param s - The string to strip
  * @returns The string without ANSI sequences
- * @throws {@link Error} Not yet implemented
  * @public
  */
 export function strip(s: string): string {
-  throw new Error("ansi.strip() not yet implemented");
+  // ANSI escape sequences start with ESC (0x1B) followed by [
+  // and end with a letter (terminator)
+  // eslint-disable-next-line no-control-regex
+  return s.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
 }
 
 /**
@@ -48,9 +50,8 @@ export function strip(s: string): string {
  *
  * @param s - The string to measure
  * @returns The visible character count
- * @throws {@link Error} Not yet implemented
  * @public
  */
 export function printableLength(s: string): number {
-  throw new Error("ansi.printableLength() not yet implemented");
+  return strip(s).length;
 }

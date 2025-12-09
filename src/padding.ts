@@ -65,7 +65,6 @@ export interface PaddingOptions {
  * @param width - The target width for padded lines
  * @param paddingFunc - Optional custom padding function
  * @returns A new PaddingWriter instance
- * @throws {@link Error} Not yet implemented
  *
  * @example
  * ```ts
@@ -82,7 +81,68 @@ export function newWriter(
   width: number,
   paddingFunc: PaddingFunc | null
 ): PaddingWriter {
-  throw new Error("padding.newWriter() not yet implemented");
+  let buffer = '';
+  let currentLine = '';
+  let closed = false;
+
+  // Import ansi utilities dynamically to avoid circular dependencies
+  // eslint-disable-next-line no-control-regex
+  const stripAnsi = (s: string): string => s.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+  const printableLength = (s: string): number => stripAnsi(s).length;
+
+  const padLine = (line: string): string => {
+    if (width === 0) return line;
+    
+    const visibleLen = printableLength(line);
+    const padWidth = Math.max(0, width - visibleLen);
+    
+    if (padWidth === 0) return line;
+    
+    let padding = '';
+    if (paddingFunc) {
+      const padWriter = { write: (str: string) => { padding += str; } };
+      for (let i = 0; i < padWidth; i++) {
+        paddingFunc(padWriter);
+      }
+    } else {
+      padding = ' '.repeat(padWidth);
+    }
+    
+    return line + padding;
+  };
+
+  return {
+    write(s: string): void {
+      if (closed) {
+        throw new Error('Writer is closed');
+      }
+
+      for (let i = 0; i < s.length; i++) {
+        const char = s[i];
+
+        if (char === '\n') {
+          buffer += padLine(currentLine) + '\n';
+          currentLine = '';
+        } else {
+          currentLine += char;
+        }
+      }
+    },
+
+    close(): void {
+      if (!closed) {
+        // Pad any remaining line
+        if (currentLine.length > 0) {
+          buffer += padLine(currentLine);
+        }
+        closed = true;
+      }
+    },
+
+    toString(): string {
+      return buffer;
+    }
+  };
 }
 
 /**
@@ -94,7 +154,6 @@ export function newWriter(
  * @param s - The string to pad
  * @param width - The target width
  * @returns The padded text
- * @throws {@link Error} Not yet implemented
  *
  * @example
  * ```ts
@@ -106,5 +165,8 @@ export function newWriter(
  * @public
  */
 export function pad(s: string, width: number): string {
-  throw new Error("padding.pad() not yet implemented");
+  const writer = newWriter(width, null);
+  writer.write(s);
+  writer.close();
+  return writer.toString();
 }

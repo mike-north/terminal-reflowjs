@@ -61,11 +61,105 @@ export interface MarginOptions {
  * @param width - The total width for the output
  * @param options - Margin configuration
  * @returns A new MarginWriter instance
- * @throws {@link Error} Not yet implemented
  * @public
  */
 export function newWriter(width: number, options?: MarginOptions): MarginWriter {
-  throw new Error("margin.newWriter() not yet implemented");
+  const opts = options || {};
+  const left = opts.left || 0;
+  const right = opts.right || 0;
+  const top = opts.top || 0;
+  const bottom = opts.bottom || 0;
+
+  let buffer = '';
+  let contentBuffer = '';
+  let closed = false;
+
+  // Import indent and padding utilities
+  const indentLine = (s: string, indentWidth: number): string => {
+    if (indentWidth === 0) return s;
+    let result = '';
+    let lineStart = true;
+    
+    for (let i = 0; i < s.length; i++) {
+      const char = s[i];
+      
+      // Only add indent if the line is not empty (not just a newline)
+      if (lineStart && char !== '\n') {
+        result += ' '.repeat(indentWidth);
+        lineStart = false;
+      }
+      
+      result += char;
+      
+      if (char === '\n') {
+        lineStart = true;
+      }
+    }
+    
+    return result;
+  };
+
+  const padLine = (line: string, targetWidth: number): string => {
+    if (targetWidth === 0) return line;
+    
+    // Simple ANSI stripping for length calculation
+    // eslint-disable-next-line no-control-regex
+    const stripAnsi = (s: string): string => s.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+    const visibleLen = stripAnsi(line).length;
+    const padWidth = Math.max(0, targetWidth - visibleLen);
+    
+    return line + ' '.repeat(padWidth);
+  };
+
+  return {
+    write(s: string): void {
+      if (closed) {
+        throw new Error('Writer is closed');
+      }
+      contentBuffer += s;
+    },
+
+    close(): void {
+      if (closed) return;
+      
+      // Add top margin (empty lines)
+      if (top > 0) {
+        buffer += '\n'.repeat(top);
+      }
+
+      // Process content: apply left indent and right padding
+      if (contentBuffer.length > 0) {
+        // First apply left indent
+        let processed = indentLine(contentBuffer, left);
+        
+        // Then apply right padding if width is specified
+        if (width > 0) {
+          const lines = processed.split('\n');
+          const paddedLines = lines.map((line, idx) => {
+            // Don't pad empty lines (including trailing empty line)
+            if (line === '') {
+              return line;
+            }
+            return padLine(line, width);
+          });
+          processed = paddedLines.join('\n');
+        }
+        
+        buffer += processed;
+      }
+
+      // Add bottom margin (empty lines)
+      if (bottom > 0) {
+        buffer += '\n'.repeat(bottom);
+      }
+
+      closed = true;
+    },
+
+    toString(): string {
+      return buffer;
+    }
+  };
 }
 
 /**
@@ -76,7 +170,6 @@ export function newWriter(width: number, options?: MarginOptions): MarginWriter 
  * @param s - The text to add margins to
  * @param options - The margin options
  * @returns The text with margins applied
- * @throws {@link Error} Not yet implemented
  *
  * @example
  * ```ts
@@ -88,6 +181,21 @@ export function newWriter(width: number, options?: MarginOptions): MarginWriter 
  *
  * @public
  */
-export function margin(s: string, options: MarginOptions): string {
-  throw new Error("margin.margin() not yet implemented");
+export function margin(s: string, options?: MarginOptions): string {
+  const opts = options ?? {};
+  const left = opts.left ?? 0;
+  const right = opts.right ?? 0;
+  
+  // Calculate total width if right margin is specified
+  // Width = content width + left + right
+  const width = right > 0 ? (s.split('\n').reduce((max, line) => {
+    // eslint-disable-next-line no-control-regex
+    const stripAnsi = (str: string): string => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+    return Math.max(max, stripAnsi(line).length);
+  }, 0) + left + right) : 0;
+  
+  const writer = newWriter(width, options);
+  writer.write(s);
+  writer.close();
+  return writer.toString();
 }

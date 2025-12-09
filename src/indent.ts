@@ -65,7 +65,6 @@ export interface IndentOptions {
  * @param width - The number of spaces for indentation
  * @param indentFunc - Optional custom indentation function
  * @returns A new IndentWriter instance
- * @throws {@link Error} Not yet implemented
  *
  * @example
  * ```ts
@@ -82,7 +81,49 @@ export function newWriter(
   width: number,
   indentFunc: IndentFunc | null
 ): IndentWriter {
-  throw new Error("indent.newWriter() not yet implemented");
+  let buffer = '';
+  let lineStart = true;
+  let closed = false;
+
+  return {
+    write(s: string): void {
+      if (closed) {
+        throw new Error('Writer is closed');
+      }
+
+      for (let i = 0; i < s.length; i++) {
+        const char = s[i];
+
+        if (lineStart && char !== '\n') {
+          // Add indentation at the start of each line
+          if (indentFunc) {
+            const indentWriter = { write: (str: string) => { buffer += str; } };
+            // Call indentFunc width times to build the full indentation
+            for (let j = 0; j < width; j++) {
+              indentFunc(indentWriter);
+            }
+          } else {
+            buffer += ' '.repeat(width);
+          }
+          lineStart = false;
+        }
+
+        buffer += char;
+
+        if (char === '\n') {
+          lineStart = true;
+        }
+      }
+    },
+
+    close(): void {
+      closed = true;
+    },
+
+    toString(): string {
+      return buffer;
+    }
+  };
 }
 
 /**
@@ -93,7 +134,6 @@ export function newWriter(
  * @param s - The string to indent
  * @param width - The number of spaces to add
  * @returns The indented text
- * @throws {@link Error} Not yet implemented
  *
  * @example
  * ```ts
@@ -105,5 +145,8 @@ export function newWriter(
  * @public
  */
 export function indent(s: string, width: number): string {
-  throw new Error("indent.indent() not yet implemented");
+  const writer = newWriter(width, null);
+  writer.write(s);
+  writer.close();
+  return writer.toString();
 }
