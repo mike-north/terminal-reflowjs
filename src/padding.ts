@@ -26,6 +26,7 @@ export class PaddingWriter {
   private cache: string;
   private lineLen: number;
   private ansi: boolean;
+  private readonly ansiPattern: RegExp;
 
   constructor(width: number, paddingFunc: PaddingFunc | null = null) {
     this.padding = width;
@@ -34,6 +35,7 @@ export class PaddingWriter {
     this.cache = '';
     this.lineLen = 0;
     this.ansi = false;
+    this.ansiPattern = ansiRegex();
   }
 
   /**
@@ -47,6 +49,7 @@ export class PaddingWriter {
     for (const char of content) {
       if (char === '\x1B') {
         // ANSI escape sequence start
+        // This simple detection matches the Go implementation behavior
         this.ansi = true;
       } else if (this.ansi) {
         // ANSI sequence terminated by a letter (A-Z or a-z)
@@ -57,6 +60,9 @@ export class PaddingWriter {
         }
       } else {
         // Regular character - calculate its display width
+        // Note: We calculate width character-by-character to match the Go implementation
+        // and to correctly handle newlines mid-stream. This is necessary because we need
+        // to know the exact width at the point where we encounter a newline.
         this.lineLen += stringWidth(char);
 
         if (char === '\n') {
@@ -157,5 +163,8 @@ export function bytes(content: Buffer, width: number): Buffer {
  * @public
  */
 export function string(content: string, width: number): string {
-  return bytes(Buffer.from(content), width).toString();
+  const writer = new PaddingWriter(width, null);
+  writer.write(content);
+  writer.flush();
+  return writer.toString();
 }
