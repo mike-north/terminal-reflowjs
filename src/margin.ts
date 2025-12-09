@@ -15,6 +15,8 @@
  * @packageDocumentation
  */
 
+import * as ansi from "./ansi";
+
 /**
  * Writer interface for margin text processing.
  *
@@ -102,10 +104,8 @@ export function newWriter(width: number, options?: MarginOptions): MarginWriter 
   const padLine = (line: string, targetWidth: number): string => {
     if (targetWidth === 0) return line;
     
-    // Simple ANSI stripping for length calculation
-    // eslint-disable-next-line no-control-regex
-    const stripAnsi = (s: string): string => s.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
-    const visibleLen = stripAnsi(line).length;
+    // Use ANSI stripping for length calculation
+    const visibleLen = ansi.printableLength(line);
     const padWidth = Math.max(0, targetWidth - visibleLen);
     
     return line + ' '.repeat(padWidth);
@@ -189,9 +189,7 @@ export function margin(s: string, options?: MarginOptions): string {
   // Calculate total width if right margin is specified
   // Width = content width + left + right
   const width = right > 0 ? (s.split('\n').reduce((max, line) => {
-    // eslint-disable-next-line no-control-regex
-    const stripAnsi = (str: string): string => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
-    return Math.max(max, stripAnsi(line).length);
+    return Math.max(max, ansi.printableLength(line));
   }, 0) + left + right) : 0;
   
   const writer = newWriter(width, options);

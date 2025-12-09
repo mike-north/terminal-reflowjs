@@ -40,9 +40,10 @@ export function ansiString(): string {
  */
 export function strip(s: string): string {
   // ANSI escape sequences start with ESC (0x1B) followed by [
-  // and end with a letter (terminator)
+  // and end with a letter (a-zA-Z) or other terminators like ~
+  // This pattern covers SGR (Select Graphic Rendition) and other CSI sequences
   // eslint-disable-next-line no-control-regex
-  return s.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+  return s.replace(/\x1B\[[0-9;]*[a-zA-Z~]/g, '');
 }
 
 /**

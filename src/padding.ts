@@ -15,6 +15,8 @@
  * @packageDocumentation
  */
 
+import * as ansi from "./ansi";
+
 /**
  * Function type for custom padding.
  *
@@ -85,15 +87,12 @@ export function newWriter(
   let currentLine = '';
   let closed = false;
 
-  // Import ansi utilities dynamically to avoid circular dependencies
-  // eslint-disable-next-line no-control-regex
-  const stripAnsi = (s: string): string => s.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
-  const printableLength = (s: string): number => stripAnsi(s).length;
+  // Use ANSI utilities to correctly calculate visible width
 
   const padLine = (line: string): string => {
     if (width === 0) return line;
     
-    const visibleLen = printableLength(line);
+    const visibleLen = ansi.printableLength(line);
     const padWidth = Math.max(0, width - visibleLen);
     
     if (padWidth === 0) return line;
