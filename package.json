@@ -54,5 +54,9 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0",
     "vitest": "^4.0.15"
+  },
+  "dependencies": {
+    "ansi-regex": "^6.2.2",
+    "string-width": "^8.1.0"
   }
 }
