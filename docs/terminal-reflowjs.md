@@ -4,6 +4,155 @@
 
 ## terminal-reflowjs package
 
+ANSI-aware text reflow utilities for terminal output.
+
+This library provides text transformation functions that correctly handle ANSI escape sequences (colors, styles) while wrapping, truncating, padding, and indenting text for terminal display.
+
+## Example
+
+
+```ts
+import { wordwrap, truncate, indent, pad } from 'terminal-reflowjs';
+
+// Word-wrap to 40 columns
+const wrapped = wordwrap(longText, 40);
+
+// Truncate with ellipsis
+const short = truncate(title, 20, { tail: '...' });
+
+// Indent by 4 spaces
+const indented = indent(code, 4);
+
+// Pad lines to 80 columns
+const padded = pad(text, 80);
+```
+
+## Classes
+
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[AnsiBuffer](./terminal-reflowjs.ansibuffer.md)
+
+
+</td><td>
+
+ANSI-aware string buffer that tracks the last styling sequence written. Useful for building strings while maintaining ANSI state.
+
+
+</td></tr>
+<tr><td>
+
+[AnsiPassthrough](./terminal-reflowjs.ansipassthrough.md)
+
+
+</td><td>
+
+ANSI-aware forwarding writer that tracks escape sequences. Useful for transforming text while preserving ANSI styling.
+
+
+</td></tr>
+<tr><td>
+
+[HardWrapWriter](./terminal-reflowjs.hardwrapwriter.md)
+
+
+</td><td>
+
+Hard-wrap writer for streaming text processing.
+
+Wraps text at exact character limits, breaking words if necessary. Preserves ANSI escape sequences without counting them toward width.
+
+
+</td></tr>
+<tr><td>
+
+[IndentWriter](./terminal-reflowjs.indentwriter.md)
+
+
+</td><td>
+
+Indent writer for streaming text processing.
+
+Adds indentation at the start of each line while preserving ANSI escape sequences correctly.
+
+
+</td></tr>
+<tr><td>
+
+[IndentWriterPipe](./terminal-reflowjs.indentwriterpipe.md)
+
+
+</td><td>
+
+Indent writer that pipes output directly to another writer.
+
+
+</td></tr>
+<tr><td>
+
+[MarginWriter](./terminal-reflowjs.marginwriter.md)
+
+
+</td><td>
+
+Margin writer for streaming text processing.
+
+Applies margins around text content. Call close() before retrieving the result.
+
+
+</td></tr>
+<tr><td>
+
+[PadWriter](./terminal-reflowjs.padwriter.md)
+
+
+</td><td>
+
+Padding writer for streaming text processing.
+
+Pads each line to a specified width by adding trailing spaces. Preserves ANSI escape sequences and handles wide characters correctly.
+
+
+</td></tr>
+<tr><td>
+
+[TruncateWriter](./terminal-reflowjs.truncatewriter.md)
+
+
+</td><td>
+
+Truncate writer for streaming text processing.
+
+Truncates text to a maximum width while preserving ANSI escape sequences. Optionally appends a tail (like "...") when content is truncated.
+
+
+</td></tr>
+<tr><td>
+
+[WordWrapWriter](./terminal-reflowjs.wordwrapwriter.md)
+
+
+</td><td>
+
+Word-wrap writer for streaming text processing.
+
+Wraps text at word boundaries (spaces, hyphens) while preserving ANSI escape sequences. Words are never broken unless they exceed the line width.
+
+
+</td></tr>
+</tbody></table>
+
 ## Functions
 
 <table><thead><tr><th>
@@ -19,10 +168,280 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[helloWorld()](./terminal-reflowjs.helloworld.md)
+[dedent(s)](./terminal-reflowjs.dedent.md)
 
 
 </td><td>
+
+Remove common leading whitespace from text.
+
+Detects the minimum indentation (count of leading whitespace characters) across all non-empty lines and removes that many characters from each line. Whitespace-only lines are stripped entirely.
+
+
+</td></tr>
+<tr><td>
+
+[hardwrap(s, limit, options)](./terminal-reflowjs.hardwrap.md)
+
+
+</td><td>
+
+Hard-wrap a string to the specified width.
+
+Wraps text at exact character boundaries, breaking words if necessary. This is the recommended function for strict width enforcement.
+
+
+</td></tr>
+<tr><td>
+
+[indent(s, spaces, options)](./terminal-reflowjs.indent.md)
+
+
+</td><td>
+
+Indent a string by the specified number of spaces.
+
+Adds indentation at the start of each line while preserving ANSI escape sequences.
+
+
+</td></tr>
+<tr><td>
+
+[isAnsiTerminator(c)](./terminal-reflowjs.isansiterminator.md)
+
+
+</td><td>
+
+Check if a character is an ANSI sequence terminator. Terminators are characters in the ranges A-Z (0x40-0x5a) and a-z (0x61-0x7a).
+
+
+</td></tr>
+<tr><td>
+
+[margin(s, options)](./terminal-reflowjs.margin.md)
+
+
+</td><td>
+
+Add margins around text.
+
+Applies top, bottom, left, and right margins to text content.
+
+
+</td></tr>
+<tr><td>
+
+[pad(s, width, options)](./terminal-reflowjs.pad.md)
+
+
+</td><td>
+
+Pad a string to the specified width.
+
+Adds trailing spaces to each line to reach the specified width. Preserves ANSI escape sequences.
+
+
+</td></tr>
+<tr><td>
+
+[printableRuneWidth(str)](./terminal-reflowjs.printablerunewidth.md)
+
+
+</td><td>
+
+Calculate the visible (printable) width of a string, ignoring ANSI escape sequences. Correctly handles East Asian wide characters.
+
+
+</td></tr>
+<tr><td>
+
+[stripAnsi(str)](./terminal-reflowjs.stripansi.md)
+
+
+</td><td>
+
+Strip all ANSI escape sequences from a string.
+
+
+</td></tr>
+<tr><td>
+
+[truncate(s, width, options)](./terminal-reflowjs.truncate.md)
+
+
+</td><td>
+
+Truncate a string to the specified width.
+
+Shortens text to fit within a maximum width. Use the `tail` option to add an indicator like "..." when content is truncated.
+
+
+</td></tr>
+<tr><td>
+
+[wordwrap(s, limit, options)](./terminal-reflowjs.wordwrap.md)
+
+
+</td><td>
+
+Word-wrap a string to the specified width.
+
+Wraps text at word boundaries (spaces, hyphens), keeping words intact. This is the recommended function for most use cases.
+
+
+</td></tr>
+</tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[HardWrapOptions](./terminal-reflowjs.hardwrapoptions.md)
+
+
+</td><td>
+
+Options for hard wrapping.
+
+
+</td></tr>
+<tr><td>
+
+[IndentOptions](./terminal-reflowjs.indentoptions.md)
+
+
+</td><td>
+
+Options for indentation.
+
+
+</td></tr>
+<tr><td>
+
+[MarginOptions](./terminal-reflowjs.marginoptions.md)
+
+
+</td><td>
+
+Options for margins.
+
+
+</td></tr>
+<tr><td>
+
+[PadOptions](./terminal-reflowjs.padoptions.md)
+
+
+</td><td>
+
+Options for padding.
+
+
+</td></tr>
+<tr><td>
+
+[TruncateOptions](./terminal-reflowjs.truncateoptions.md)
+
+
+</td><td>
+
+Options for truncation.
+
+
+</td></tr>
+<tr><td>
+
+[WordWrapOptions](./terminal-reflowjs.wordwrapoptions.md)
+
+
+</td><td>
+
+Options for word wrapping.
+
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ANSI\_MARKER](./terminal-reflowjs.ansi_marker.md)
+
+
+</td><td>
+
+ANSI escape sequence marker character (ESC = 0x1B).
+
+
+</td></tr>
+<tr><td>
+
+[ANSI\_RESET](./terminal-reflowjs.ansi_reset.md)
+
+
+</td><td>
+
+ANSI reset sequence to clear all formatting.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IndentFunc](./terminal-reflowjs.indentfunc.md)
+
+
+</td><td>
+
+Custom indentation function type. Called once per indentation level to write custom indent characters.
+
+
+</td></tr>
+<tr><td>
+
+[PadFunc](./terminal-reflowjs.padfunc.md)
+
+
+</td><td>
+
+Custom padding function type. Receives the number of padding units needed and returns the padding string.
 
 
 </td></tr>

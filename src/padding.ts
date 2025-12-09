@@ -1,130 +1,112 @@
 /**
- * Padding module for padding text to a specified width while preserving ANSI codes.
- * Ported from https://github.com/muesli/reflow/tree/master/padding
+ * Pad text to a specified width.
+ *
+ * Adds trailing spaces to ensure each line reaches the specified width,
+ * while preserving ANSI escape sequences.
  *
  * @packageDocumentation
  */
 
-import stringWidth from 'string-width';
+import stringWidth from "string-width";
+import { isAnsiTerminator } from "./ansi";
 
 /**
- * PaddingFunc is a function that writes padding characters to a buffer.
- * It receives the number of padding units needed.
+ * Custom padding function type.
+ * Receives the number of padding units needed and returns the padding string.
  * @public
  */
-export type PaddingFunc = (count: number) => string;
+export type PadFunc = (count: number) => string;
 
 /**
- * PaddingWriter is a writer that pads text to a specified width.
- * It preserves ANSI escape sequences and handles wide characters correctly.
+ * Options for padding.
  * @public
  */
-export class PaddingWriter {
-  private padding: number;
-  private padFunc: PaddingFunc | null;
-  private buf: string;
-  private cache: string;
-  private lineLen: number;
-  private ansi: boolean;
+export interface PadOptions {
+  /** Custom function to generate padding (overrides default spaces) */
+  padFunc?: PadFunc;
+}
 
-  constructor(width: number, paddingFunc: PaddingFunc | null = null) {
-    this.padding = width;
-    this.padFunc = paddingFunc;
-    this.buf = '';
-    this.cache = '';
-    this.lineLen = 0;
-    this.ansi = false;
+/**
+ * Padding writer for streaming text processing.
+ *
+ * Pads each line to a specified width by adding trailing spaces.
+ * Preserves ANSI escape sequences and handles wide characters correctly.
+ *
+ * @example
+ * ```ts
+ * const writer = new PadWriter(20);
+ * writer.write("short\ntext");
+ * writer.close();
+ * console.log(writer.toString());
+ * // "short               \ntext                "
+ * ```
+ *
+ * @public
+ */
+export class PadWriter {
+  /** Target width for padding */
+  readonly width: number;
+  /** Custom padding function */
+  readonly padFunc?: PadFunc;
+
+  private buf = "";
+  private cache = "";
+  private lineLen = 0;
+  private ansi = false;
+
+  constructor(width: number, options: PadOptions = {}) {
+    this.width = width;
+    this.padFunc = options.padFunc;
   }
 
   /**
    * Write content to the padding buffer.
-   * @param content - The string to write
-   * @returns The number of bytes written
    */
-  write(content: string): number {
-    const bytes = Buffer.from(content);
-    
+  write(content: string): void {
     for (const char of content) {
-      if (char === '\x1B') {
-        // ANSI escape sequence start
-        // This simple detection matches the Go implementation behavior
+      if (char === "\x1B") {
         this.ansi = true;
       } else if (this.ansi) {
-        // ANSI sequence terminated by a letter (A-Z or a-z)
-        // This matches the Go implementation's check: (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a)
         const code = char.charCodeAt(0);
         if ((code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) {
           this.ansi = false;
         }
       } else {
-        // Regular character - calculate its display width
-        // Note: We calculate width character-by-character to match the Go implementation
-        // and to correctly handle newlines mid-stream. This is necessary because we need
-        // to know the exact width at the point where we encounter a newline.
         this.lineLen += stringWidth(char);
 
-        if (char === '\n') {
-          // End of current line - add padding BEFORE the newline, then reset
+        if (char === "\n") {
           this.padLine();
           this.lineLen = 0;
         }
       }
 
-      // Write character to buffer
       this.buf += char;
     }
-
-    return bytes.length;
   }
 
-  /**
-   * Pad the current line if needed.
-   * Only pads if there's content on the line (lineLen \> 0) and the line is shorter than the padding width.
-   * This matches the Go implementation behavior where empty lines are not padded.
-   */
   private padLine(): void {
-    if (this.padding > 0 && this.lineLen > 0 && this.lineLen < this.padding) {
-      const padAmount = this.padding - this.lineLen;
-      if (this.padFunc !== null) {
-        // Use custom padding function
+    if (this.width > 0 && this.lineLen > 0 && this.lineLen < this.width) {
+      const padAmount = this.width - this.lineLen;
+      if (this.padFunc) {
         this.buf += this.padFunc(padAmount);
       } else {
-        // Default to spaces
-        this.buf += ' '.repeat(padAmount);
+        this.buf += " ".repeat(padAmount);
       }
     }
   }
 
   /**
-   * Flush completes the padding operation and prepares the result.
-   * Always call this before retrieving the final result.
-   * @returns Error if any occurred during flushing
+   * Finalize padding and prepare the result.
    */
-  flush(): void {
-    // If there's content without a trailing newline, pad it
+  close(): void {
     if (this.lineLen !== 0) {
       this.padLine();
     }
 
-    // Move buffer to cache and reset
     this.cache = this.buf;
-    this.buf = '';
+    this.buf = "";
     this.lineLen = 0;
     this.ansi = false;
-  }
-
-  /**
-   * Close finishes the padding operation (alias for flush).
-   */
-  close(): void {
-    this.flush();
-  }
-
-  /**
-   * Get the padded result as a Buffer.
-   */
-  bytes(): Buffer {
-    return Buffer.from(this.cache);
   }
 
   /**
@@ -136,33 +118,28 @@ export class PaddingWriter {
 }
 
 /**
- * Pad a byte buffer to the specified width.
- * This is a convenience function that creates a PaddingWriter, writes the content, and returns the result.
- * 
- * @param content - The buffer to pad
- * @param width - The desired width
- * @returns The padded buffer
- * @public
- */
-export function bytes(content: Buffer, width: number): Buffer {
-  const writer = new PaddingWriter(width, null);
-  writer.write(content.toString());
-  writer.flush();
-  return writer.bytes();
-}
-
-/**
  * Pad a string to the specified width.
- * This is a convenience function that creates a PaddingWriter, writes the content, and returns the result.
- * 
- * @param content - The string to pad
- * @param width - The desired width
+ *
+ * Adds trailing spaces to each line to reach the specified width.
+ * Preserves ANSI escape sequences.
+ *
+ * @param s - The string to pad
+ * @param width - Target width for each line
+ * @param options - Padding options
  * @returns The padded string
+ *
+ * @example
+ * ```ts
+ * pad("hello", 10);
+ * // "hello     "
+ * ```
+ *
  * @public
  */
-export function string(content: string, width: number): string {
-  const writer = new PaddingWriter(width, null);
-  writer.write(content);
-  writer.flush();
+export function pad(s: string, width: number, options?: PadOptions): string {
+  const writer = new PadWriter(width, options);
+  writer.write(s);
+  writer.close();
   return writer.toString();
 }
+

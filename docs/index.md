@@ -24,6 +24,10 @@ Description
 
 </td><td>
 
+ANSI-aware text reflow utilities for terminal output.
+
+This library provides text transformation functions that correctly handle ANSI escape sequences (colors, styles) while wrapping, truncating, padding, and indenting text for terminal display.
+
 
 </td></tr>
 </tbody></table>

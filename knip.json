@@ -1,0 +1,9 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["src/**/*.ts", "test/**/*.test.ts"],
+      "ignore": ["dist/**/*", "node_modules/**/*"]
+    }
+  }
+}

@@ -1,44 +1,12 @@
 /**
- * Add margins to text blocks.
+ * Add margins around text.
  *
- * This module provides utilities for adding margins (top, bottom, left, right)
- * around text content, combining the functionality of padding and indentation.
- *
- * @example
- * ```ts
- * import { margin } from 'terminal-reflowjs';
- *
- * const result = margin("Hello", { left: 2, right: 2 });
- * // Result: "  Hello  "
- * ```
+ * Applies top, bottom, left, and right margins to text content.
  *
  * @packageDocumentation
  */
 
-/**
- * Writer interface for margin text processing.
- *
- * Compatible with io.WriteCloser patterns from Go.
- *
- * @public
- */
-export interface MarginWriter {
-  /**
-   * Writes a string to the output.
-   * @param s - The string to write
-   */
-  write(s: string): void;
-
-  /**
-   * Closes the writer and finalizes output.
-   */
-  close(): void;
-
-  /**
-   * Returns the string with margins applied.
-   */
-  toString(): string;
-}
+import { printableRuneWidth } from "./ansi";
 
 /**
  * Options for margins.
@@ -56,38 +24,114 @@ export interface MarginOptions {
 }
 
 /**
- * Creates a new margin writer with the specified options.
+ * Margin writer for streaming text processing.
  *
- * @param width - The total width for the output
- * @param options - Margin configuration
- * @returns A new MarginWriter instance
- * @throws {@link Error} Not yet implemented
- * @public
- */
-export function newWriter(width: number, options?: MarginOptions): MarginWriter {
-  throw new Error("margin.newWriter() not yet implemented");
-}
-
-/**
- * Adds margins around text.
- *
- * This is a convenience function that applies margins to text content.
- *
- * @param s - The text to add margins to
- * @param options - The margin options
- * @returns The text with margins applied
- * @throws {@link Error} Not yet implemented
+ * Applies margins around text content. Call close() before
+ * retrieving the result.
  *
  * @example
  * ```ts
- * const result = margin("Hello", { left: 2, top: 1 });
- * console.log(result);
- * //
- * //   Hello
+ * const writer = new MarginWriter({ left: 4, top: 1 });
+ * writer.write("Hello\nWorld");
+ * writer.close();
+ * console.log(writer.toString());
+ * ```
+ *
+ * @public
+ */
+export class MarginWriter {
+  /** Target width for the output (0 = no width constraint) */
+  readonly width: number;
+  /** Margin options */
+  readonly options: Required<MarginOptions>;
+
+  private buffer = "";
+  private result = "";
+  private closed = false;
+
+  constructor(options: MarginOptions = {}, width = 0) {
+    this.width = width;
+    this.options = {
+      top: options.top ?? 0,
+      bottom: options.bottom ?? 0,
+      left: options.left ?? 0,
+      right: options.right ?? 0,
+    };
+  }
+
+  /**
+   * Write content to the margin buffer.
+   */
+  write(s: string): void {
+    if (this.closed) {
+      throw new Error("MarginWriter already closed");
+    }
+    this.buffer += s;
+  }
+
+  /**
+   * Finalize margins and prepare the result.
+   */
+  close(): void {
+    if (this.closed) return;
+    this.result = this.applyMargins(this.buffer);
+    this.closed = true;
+  }
+
+  /**
+   * Get the result with margins applied.
+   */
+  toString(): string {
+    if (!this.closed) {
+      this.close();
+    }
+    return this.result;
+  }
+
+  private applyMargins(content: string): string {
+    const lines = content.split("\n");
+    const leftSpaces = " ".repeat(this.options.left);
+
+    const paddedLines = lines.map((line) => {
+      const visibleWidth = printableRuneWidth(line);
+      const desiredRight =
+        this.options.right ||
+        (this.width > 0
+          ? Math.max(0, this.width - this.options.left - visibleWidth)
+          : 0);
+      const rightSpaces = " ".repeat(desiredRight);
+      return `${leftSpaces}${line}${rightSpaces}`;
+    });
+
+    const blankLine = " ".repeat(this.options.left + this.options.right);
+    const top = Array.from({ length: this.options.top }, () => blankLine);
+    const bottom = Array.from({ length: this.options.bottom }, () => blankLine);
+
+    return [...top, ...paddedLines, ...bottom].join("\n");
+  }
+}
+
+/**
+ * Add margins around text.
+ *
+ * Applies top, bottom, left, and right margins to text content.
+ *
+ * @param s - The text to add margins to
+ * @param options - Margin configuration
+ * @returns The text with margins applied
+ *
+ * @example
+ * ```ts
+ * margin("Hello", { left: 4, top: 1 });
+ * // "\n    Hello"
  * ```
  *
  * @public
  */
 export function margin(s: string, options: MarginOptions): string {
-  throw new Error("margin.margin() not yet implemented");
+  const writer = new MarginWriter(options);
+  writer.write(s);
+  writer.close();
+  return writer.toString();
 }
+
