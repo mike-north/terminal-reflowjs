@@ -1,56 +1,104 @@
 /**
- * ANSI escape sequence parsing and handling module.
- *
- * This module provides utilities for detecting, parsing, and manipulating
- * ANSI escape sequences in terminal text. It serves as a foundation for
- * other modules that need to handle text with ANSI formatting codes.
+ * ANSI escape sequence handling utilities.
+ * Ported from: https://github.com/muesli/reflow/tree/master/ansi
  *
  * @packageDocumentation
  */
 
 /**
- * Writer interface for ANSI-aware text processing.
+ * ANSI escape sequence marker character
  * @public
  */
-export interface AnsiWriter {
+export const MARKER = '\x1B';
+
+/**
+ * Check if a character is an ANSI sequence terminator.
+ * Terminators are characters in the ranges A-Z (0x40-0x5a) and a-z (0x61-0x7a).
+ * Reference: https://github.com/muesli/reflow/blob/master/ansi/ansi.go
+ * @public
+ */
+export function isTerminator(c: string): boolean {
+  const code = c.charCodeAt(0);
+  return (code >= 0x40 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a);
+}
+
+/**
+ * Writer that tracks ANSI escape sequences and allows resetting/restoring them.
+ * This is crucial for maintaining color/style state when adding indentation.
+ * Reference: https://github.com/muesli/reflow/blob/master/ansi/writer.go
+ * @public
+ */
+export class Writer {
+  /** The underlying writer to forward output to */
+  forward: { write: (data: string) => void };
+  
+  private ansi = false;
+  private ansiseq = '';
+  private lastseq = '';
+  private seqchanged = false;
+
+  constructor(forward: { write: (data: string) => void }) {
+    this.forward = forward;
+  }
+
   /**
-   * Writes a string to the output.
-   * @param s - The string to write
+   * Write content to the ANSI buffer.
+   * Tracks ANSI sequences and forwards processed output.
    */
-  write(s: string): void;
-}
+  write(data: string): void {
+    for (let i = 0; i < data.length; i++) {
+      const c = data[i];
+      
+      if (c === MARKER) {
+        // ANSI escape sequence start
+        this.ansi = true;
+        this.seqchanged = true;
+        this.ansiseq += c;
+      } else if (this.ansi) {
+        this.ansiseq += c;
+        if (isTerminator(c)) {
+          // ANSI sequence terminated
+          this.ansi = false;
 
-/**
- * Returns a string representation with ANSI handling.
- *
- * @returns A placeholder string
- * @throws {@link Error} Not yet implemented
- * @public
- */
-export function ansiString(): string {
-  throw new Error("ansi.ansiString() not yet implemented");
-}
+          if (this.ansiseq.endsWith('[0m')) {
+            // reset sequence
+            this.lastseq = '';
+            this.seqchanged = false;
+          } else if (c === 'm') {
+            // color code - save it
+            this.lastseq = this.ansiseq;
+          }
 
-/**
- * Strips ANSI escape sequences from a string.
- *
- * @param s - The string to strip
- * @returns The string without ANSI sequences
- * @throws {@link Error} Not yet implemented
- * @public
- */
-export function strip(s: string): string {
-  throw new Error("ansi.strip() not yet implemented");
-}
+          this.forward.write(this.ansiseq);
+          this.ansiseq = '';
+        }
+      } else {
+        this.forward.write(c);
+      }
+    }
+  }
 
-/**
- * Gets the printable length of a string (excluding ANSI sequences).
- *
- * @param s - The string to measure
- * @returns The visible character count
- * @throws {@link Error} Not yet implemented
- * @public
- */
-export function printableLength(s: string): number {
-  throw new Error("ansi.printableLength() not yet implemented");
+  /**
+   * Get the last ANSI sequence that was written
+   */
+  lastSequence(): string {
+    return this.lastseq;
+  }
+
+  /**
+   * Write an ANSI reset sequence if there have been changes
+   */
+  resetAnsi(): void {
+    if (!this.seqchanged) {
+      return;
+    }
+    this.forward.write('\x1b[0m');
+  }
+
+  /**
+   * Restore the last ANSI sequence
+   */
+  restoreAnsi(): void {
+    this.forward.write(this.lastseq);
+  }
 }

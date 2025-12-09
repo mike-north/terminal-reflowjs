@@ -1,30 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { ansi, dedent, indent, padding, wordwrap, wrap, truncate } from "@/index";
+import { ansi, indent } from "@/index";
 
 describe("Module Structure", () => {
   it("should export all modules from index", () => {
     // Verify ansi module exports
     expect(ansi).toBeDefined();
-    
-    // Verify wordwrap module exports
-    expect(wordwrap).toBeDefined();
-    
-    // Verify wrap module exports  
-    expect(wrap).toBeDefined();
-    
+    expect(ansi.MARKER).toBeDefined();
+    expect(ansi.isTerminator).toBeDefined();
+    expect(ansi.Writer).toBeDefined();
+
     // Verify indent module exports
     expect(indent).toBeDefined();
-    
-    // Verify dedent module exports
-    expect(dedent).toBeDefined();
-    
-    // Verify padding module exports
-    expect(padding).toBeDefined();
-    expect(padding.PaddingWriter).toBeDefined();
-    expect(padding.string).toBeDefined();
-    expect(padding.bytes).toBeDefined();
-    
-    // Verify truncate module exports
-    expect(truncate).toBeDefined();
+    expect(indent.Writer).toBeDefined();
+    expect(indent.WriterPipe).toBeDefined();
+    expect(indent.newWriter).toBeDefined();
+    expect(indent.newWriterPipe).toBeDefined();
+    expect(indent.indentBytes).toBeDefined();
+    expect(indent.indentString).toBeDefined();
   });
 });

@@ -6,21 +6,10 @@
 
 declare namespace ansi {
     export {
-        ansiString,
-        strip,
-        printableLength,
-        AnsiWriter
+        isTerminator,
+        MARKER,
+        Writer
     }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function ansiString(): string;
-
-// @public
-interface AnsiWriter {
-    write(s: string): void;
 }
 
 // @public
@@ -40,35 +29,28 @@ function dedent_2(s: string): string;
 declare namespace indent {
     export {
         newWriter_3 as newWriter,
-        indent_2 as indent,
+        newWriterPipe,
+        indentBytes,
+        indentString,
         IndentFunc,
-        IndentWriter,
-        IndentOptions
+        Writer_2 as Writer,
+        WriterPipe
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function indent_2(s: string, width: number): string;
+function indentBytes(data: Uint8Array, indent: number): Uint8Array;
 
 // @public
 type IndentFunc = (writer: {
-    write(s: string): void;
+    write: (data: string) => void;
 }) => void;
 
 // @public
-interface IndentOptions {
-    indentFunc?: IndentFunc;
-    width?: number;
-}
+function indentString(str: string, indent: number): string;
 
 // @public
-interface IndentWriter {
-    close(): void;
-    toString(): string;
-    write(s: string): void;
-}
+function isTerminator(c: string): boolean;
 
 declare namespace margin {
     export {
@@ -99,6 +81,9 @@ interface MarginWriter {
     write(s: string): void;
 }
 
+// @public
+const MARKER = "\u001B";
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
 // @public
@@ -109,10 +94,8 @@ function newWriter(limit: number): WordWrapWriter;
 // @public
 function newWriter_2(limit: number): WrapWriter;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
 // @public
-function newWriter_3(width: number, indentFunc: IndentFunc | null): IndentWriter;
+function newWriter_3(indent: number, indentFunc?: IndentFunc): Writer_2;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
 //
@@ -123,6 +106,11 @@ function newWriter_4(width: number, tail?: string): TruncateWriter;
 //
 // @public
 function newWriter_5(width: number, options?: MarginOptions): MarginWriter;
+
+// @public
+function newWriterPipe(forward: {
+    write: (data: string) => void;
+}, indent: number, indentFunc?: IndentFunc): WriterPipe;
 
 declare namespace padding {
     export {
@@ -146,18 +134,8 @@ class PaddingWriter {
     write(content: string): number;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function printableLength(s: string): number;
-
 // @public
 function string(content: string, width: number): string;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function strip(s: string): string;
 
 declare namespace truncate {
     export {
@@ -246,6 +224,40 @@ interface WrapOptions {
 interface WrapWriter {
     toString(): string;
     write(s: string): void;
+}
+
+// @public
+class Writer {
+    constructor(forward: {
+        write: (data: string) => void;
+    });
+    forward: {
+        write: (data: string) => void;
+    };
+    lastSequence(): string;
+    resetAnsi(): void;
+    restoreAnsi(): void;
+    write(data: string): void;
+}
+
+// @public
+class Writer_2 {
+    constructor(indent: number, indentFunc?: IndentFunc);
+    bytes(): Uint8Array;
+    indent: number;
+    indentFunc?: IndentFunc;
+    string(): string;
+    write(data: string | Uint8Array): number;
+}
+
+// @public
+class WriterPipe {
+    constructor(forward: {
+        write: (data: string) => void;
+    }, indent: number, indentFunc?: IndentFunc);
+    indent: number;
+    indentFunc?: IndentFunc;
+    write(data: string | Uint8Array): number;
 }
 
 ```
