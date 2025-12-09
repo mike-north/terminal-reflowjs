@@ -31,8 +31,10 @@ export function isTerminator(char: string): boolean {
 /**
  * Calculate the visual width of a rune (character)
  * Uses East Asian Width to properly handle CJK and other wide characters
+ * 
+ * @public
  */
-function runeWidth(char: string): number {
+export function runeWidth(char: string): number {
   const codePoint = char.codePointAt(0);
   if (codePoint === undefined) {
     return 0;

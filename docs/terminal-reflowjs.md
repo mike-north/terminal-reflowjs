@@ -81,6 +81,17 @@ This function iterates through the string and: - Skips ANSI escape sequences (fr
 </td></tr>
 <tr><td>
 
+[runeWidth(char)](./terminal-reflowjs.runewidth.md)
+
+
+</td><td>
+
+Calculate the visual width of a rune (character) Uses East Asian Width to properly handle CJK and other wide characters
+
+
+</td></tr>
+<tr><td>
+
 [wrapBytes(data, limit, options)](./terminal-reflowjs.wrapbytes.md)
 
 

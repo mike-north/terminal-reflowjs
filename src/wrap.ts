@@ -9,8 +9,7 @@
  * @packageDocumentation
  */
 
-import { eastAsianWidth } from "get-east-asian-width";
-import { Marker, isTerminator, printableRuneWidth } from "./ansi";
+import { Marker, isTerminator, printableRuneWidth, runeWidth } from "./ansi";
 
 /**
  * Default configuration values
@@ -108,7 +107,7 @@ export class Writer {
    * Add a newline to the buffer
    */
   private addNewLine(): void {
-    this.buf += "\n";
+    this.buf += this.newline;
     this.lineLen = 0;
   }
 
@@ -155,8 +154,7 @@ export class Writer {
         continue;
       } else {
         // Regular printable character
-        const codePoint = char.codePointAt(0);
-        const charWidth = codePoint !== undefined ? eastAsianWidth(codePoint) : 0;
+        const charWidth = runeWidth(char);
 
         // Check if we need to wrap
         if (this.lineLen + charWidth > this.limit) {
@@ -182,9 +180,16 @@ export class Writer {
 
   /**
    * Check if a character is a newline
+   * Checks if the character matches any character in the newline string
    */
   private isNewline(char: string): boolean {
-    return this.newline.includes(char);
+    // Check each character in the newline string
+    for (const nl of this.newline) {
+      if (char === nl) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

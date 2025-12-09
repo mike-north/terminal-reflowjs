@@ -17,6 +17,9 @@ export const Marker = "\u001B";
 export function printableRuneWidth(s: string): number;
 
 // @public
+export function runeWidth(char: string): number;
+
+// @public
 export function wrapBytes(data: Buffer, limit: number, options?: Partial<Omit<WrapOptions, "limit">>): Buffer;
 
 // @public

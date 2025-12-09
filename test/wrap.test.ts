@@ -148,6 +148,13 @@ describe("wrap", () => {
       // "Hello World" = 11 characters, wraps at position 8: "Hello Wo" | "rld"
       expect(result).toBe("\x1B[31mHello\x1B[0m Wo\nrld");
     });
+
+    it("should respect custom newline character", () => {
+      const result = wrapString("foo bar", 3, {
+        newline: "\r\n",
+      });
+      expect(result).toBe("foo\r\nbar");
+    });
   });
 
   describe("wrapBytes", () => {
