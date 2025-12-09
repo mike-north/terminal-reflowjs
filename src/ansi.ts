@@ -1,13 +1,16 @@
 /**
  * ANSI escape sequence parsing and handling module.
- * 
+ *
  * This module provides utilities for detecting, parsing, and manipulating
  * ANSI escape sequences in terminal text. It serves as a foundation for
  * other modules that need to handle text with ANSI formatting codes.
+ *
+ * @packageDocumentation
  */
 
 /**
  * Writer interface for ANSI-aware text processing.
+ * @public
  */
 export interface AnsiWriter {
   /**
@@ -19,9 +22,10 @@ export interface AnsiWriter {
 
 /**
  * Returns a string representation with ANSI handling.
- * 
+ *
  * @returns A placeholder string
- * @throws {Error} Not yet implemented
+ * @throws {@link Error} Not yet implemented
+ * @public
  */
 export function ansiString(): string {
   throw new Error("ansi.ansiString() not yet implemented");
@@ -29,10 +33,11 @@ export function ansiString(): string {
 
 /**
  * Strips ANSI escape sequences from a string.
- * 
+ *
  * @param s - The string to strip
  * @returns The string without ANSI sequences
- * @throws {Error} Not yet implemented
+ * @throws {@link Error} Not yet implemented
+ * @public
  */
 export function strip(s: string): string {
   throw new Error("ansi.strip() not yet implemented");
@@ -40,10 +45,11 @@ export function strip(s: string): string {
 
 /**
  * Gets the printable length of a string (excluding ANSI sequences).
- * 
+ *
  * @param s - The string to measure
  * @returns The visible character count
- * @throws {Error} Not yet implemented
+ * @throws {@link Error} Not yet implemented
+ * @public
  */
 export function printableLength(s: string): number {
   throw new Error("ansi.printableLength() not yet implemented");

@@ -1,38 +1,48 @@
 /**
  * Remove common leading whitespace from text blocks.
- * 
+ *
  * This module provides utilities for removing indentation by detecting
  * the minimum common leading whitespace across all lines.
+ *
+ * @example
+ * ```ts
+ * import { dedent } from 'terminal-reflowjs';
+ *
+ * const input = `    Hello World!
+ *   Hello World!
+ * `;
+ * const result = dedent(input);
+ * // Result:
+ * //   Hello World!
+ * // Hello World!
+ * ```
+ *
+ * @packageDocumentation
  */
-
-/**
- * Writer interface for dedent text processing.
- */
-export interface DedentWriter {
-  /**
-   * Writes a string to the output.
-   * @param s - The string to write
-   */
-  write(s: string): void;
-}
-
-/**
- * Returns a dedented string representation.
- * 
- * @returns A placeholder string
- * @throws {Error} Not yet implemented
- */
-export function dedentString(): string {
-  throw new Error("dedent.dedentString() not yet implemented");
-}
 
 /**
  * Removes common leading whitespace from text.
- * 
- * @param text - The text to dedent
+ *
+ * Detects the minimum indentation across all non-empty lines
+ * and removes that amount from each line.
+ *
+ * @param s - The text to dedent
  * @returns The dedented text
- * @throws {Error} Not yet implemented
+ * @throws {@link Error} Not yet implemented
+ *
+ * @example
+ * ```ts
+ * const input = `    Hello World!
+ *   Hello World!
+ * `;
+ * const result = dedent(input);
+ * console.log(result);
+ * //   Hello World!
+ * // Hello World!
+ * ```
+ *
+ * @public
  */
-export function dedent(text: string): string {
+export function dedent(s: string): string {
   throw new Error("dedent.dedent() not yet implemented");
 }
