@@ -4,6 +4,32 @@
 
 ## terminal-reflowjs package
 
+## Classes
+
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Writer](./terminal-reflowjs.writer.md)
+
+
+</td><td>
+
+Writer class for wrapping text with ANSI escape sequence awareness Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go\#L17-L28
+
+
+</td></tr>
+</tbody></table>
+
 ## Functions
 
 <table><thead><tr><th>
@@ -23,6 +49,107 @@ Description
 
 
 </td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[isTerminator(char)](./terminal-reflowjs.isterminator.md)
+
+
+</td><td>
+
+Checks if a character is an ANSI sequence terminator Reference: https://github.com/muesli/reflow/blob/master/ansi/ansi.go\#L5-L7
+
+ANSI escape sequences are terminated by characters in the range 0x40-0x5A or 0x61-0x7A These include common terminators like 'm' (SGR), 'H' (CUP), etc.
+
+
+</td></tr>
+<tr><td>
+
+[printableRuneWidth(s)](./terminal-reflowjs.printablerunewidth.md)
+
+
+</td><td>
+
+Calculate the printable width of a string, excluding ANSI escape sequences Reference: https://github.com/muesli/reflow/blob/master/ansi/buffer.go\#L15-L37
+
+This function iterates through the string and: - Skips ANSI escape sequences (from ESC marker to terminator) - Counts the visual width of printable characters
+
+
+</td></tr>
+<tr><td>
+
+[wrapBytes(data, limit, options)](./terminal-reflowjs.wrapbytes.md)
+
+
+</td><td>
+
+Shorthand function to wrap bytes Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go\#L52-L58
+
+
+</td></tr>
+<tr><td>
+
+[wrapString(text, limit, options)](./terminal-reflowjs.wrapstring.md)
+
+
+</td><td>
+
+Shorthand function to wrap a string Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go\#L63-L66
+
+
+</td></tr>
+</tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[WrapOptions](./terminal-reflowjs.wrapoptions.md)
+
+
+</td><td>
+
+Options for configuring the wrap behavior
+
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Marker](./terminal-reflowjs.marker.md)
+
+
+</td><td>
+
+ANSI escape sequence marker character (ESC)
 
 
 </td></tr>

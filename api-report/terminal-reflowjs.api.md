@@ -4,258 +4,46 @@
 
 ```ts
 
-declare namespace ansi {
-    export {
-        ansiString,
-        strip,
-        printableLength,
-        AnsiWriter
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function ansiString(): string;
+// @public (undocumented)
+export function helloWorld(): string;
 
 // @public
-interface AnsiWriter {
-    write(s: string): void;
-}
-
-declare namespace dedent {
-    export {
-        dedent_2 as dedent
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function dedent_2(s: string): string;
-
-declare namespace indent {
-    export {
-        newWriter_3 as newWriter,
-        indent_2 as indent,
-        IndentFunc,
-        IndentWriter,
-        IndentOptions
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function indent_2(s: string, width: number): string;
+export function isTerminator(char: string): boolean;
 
 // @public
-type IndentFunc = (writer: {
-    write(s: string): void;
-}) => void;
+export const Marker = "\u001B";
 
 // @public
-interface IndentOptions {
-    indentFunc?: IndentFunc;
-    width?: number;
-}
+export function printableRuneWidth(s: string): number;
 
 // @public
-interface IndentWriter {
-    close(): void;
-    toString(): string;
-    write(s: string): void;
-}
-
-declare namespace margin {
-    export {
-        newWriter_6 as newWriter,
-        margin_2 as margin,
-        MarginWriter,
-        MarginOptions
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function margin_2(s: string, options: MarginOptions): string;
+export function wrapBytes(data: Buffer, limit: number, options?: Partial<Omit<WrapOptions, "limit">>): Buffer;
 
 // @public
-interface MarginOptions {
-    bottom?: number;
-    left?: number;
-    right?: number;
-    top?: number;
-}
-
-// @public
-interface MarginWriter {
-    close(): void;
-    toString(): string;
-    write(s: string): void;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter(limit: number): WordWrapWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_2(limit: number): WrapWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_3(width: number, indentFunc: IndentFunc | null): IndentWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_4(width: number, paddingFunc: PaddingFunc | null): PaddingWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_5(width: number, tail?: string): TruncateWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function newWriter_6(width: number, options?: MarginOptions): MarginWriter;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function pad(s: string, width: number): string;
-
-declare namespace padding {
-    export {
-        newWriter_4 as newWriter,
-        pad,
-        PaddingFunc,
-        PaddingWriter,
-        PaddingOptions
-    }
-}
-
-// @public
-type PaddingFunc = (writer: {
-    write(s: string): void;
-}) => void;
-
-// @public
-interface PaddingOptions {
-    paddingFunc?: PaddingFunc;
-    width?: number;
-}
-
-// @public
-interface PaddingWriter {
-    close(): void;
-    toString(): string;
-    write(s: string): void;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function printableLength(s: string): number;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function strip(s: string): string;
-
-declare namespace truncate {
-    export {
-        newWriter_5 as newWriter,
-        truncate_2 as truncate,
-        truncateWithTail,
-        TruncateWriter,
-        TruncateOptions
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function truncate_2(s: string, width: number): string;
-
-// @public
-interface TruncateOptions {
-    tail?: string;
-    width?: number;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function truncateWithTail(s: string, width: number, tail: string): string;
-
-// @public
-interface TruncateWriter {
-    toString(): string;
-    write(s: string): void;
-}
-
-declare namespace wordwrap {
-    export {
-        newWriter,
-        wordwrap_2 as wordwrap,
-        WordWrapWriter,
-        WordWrapOptions
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function wordwrap_2(s: string, limit: number): string;
-
-// @public
-interface WordWrapOptions {
-    breakpoints?: string[];
-    limit?: number;
-    newline?: string[];
-}
-
-// @public
-interface WordWrapWriter {
-    close(): void;
-    toString(): string;
-    write(s: string): void;
-}
-
-declare namespace wrap {
-    export {
-        newWriter_2 as newWriter,
-        wrap_2 as wrap,
-        WrapWriter,
-        WrapOptions
-    }
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "terminal-reflowjs" does not have an export "Error"
-//
-// @public
-function wrap_2(s: string, limit: number): string;
-
-// @public
-interface WrapOptions {
+export interface WrapOptions {
     keepNewlines?: boolean;
-    limit?: number;
-    newline?: string[];
+    limit: number;
+    newline?: string;
     preserveSpace?: boolean;
     tabWidth?: number;
 }
 
 // @public
-interface WrapWriter {
+export function wrapString(text: string, limit: number, options?: Partial<Omit<WrapOptions, "limit">>): string;
+
+// @public
+export class Writer {
+    constructor(options: WrapOptions);
+    bytes(): Buffer;
+    keepNewlines: boolean;
+    limit: number;
+    newline: string;
+    preserveSpace: boolean;
+    tabWidth: number;
     toString(): string;
-    write(s: string): void;
+    write(text: string | Buffer): void;
 }
+
+// (No @packageDocumentation comment for this package)
 
 ```

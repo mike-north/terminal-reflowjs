@@ -30,7 +30,7 @@ export interface WrapOptions {
 
   /**
    * Newline character(s) to use when wrapping
-   * Default: '\n'
+   * @defaultValue The newline character (LF)
    */
   newline?: string;
 

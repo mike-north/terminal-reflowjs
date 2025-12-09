@@ -20,6 +20,7 @@ export const Marker = "\x1B";
  * 
  * ANSI escape sequences are terminated by characters in the range 0x40-0x5A or 0x61-0x7A
  * These include common terminators like 'm' (SGR), 'H' (CUP), etc.
+ * 
  * @public
  */
 export function isTerminator(char: string): boolean {
@@ -48,6 +49,7 @@ function runeWidth(char: string): number {
  * This function iterates through the string and:
  * - Skips ANSI escape sequences (from ESC marker to terminator)
  * - Counts the visual width of printable characters
+ * 
  * @public
  */
 export function printableRuneWidth(s: string): number {
