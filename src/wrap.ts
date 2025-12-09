@@ -1,96 +1,250 @@
 /**
- * Unconditional (hard) wrapping at exact character limits.
- *
- * This module provides utilities for hard-wrapping text at a specific
- * character width, breaking lines regardless of word boundaries.
- *
- * @example
- * ```ts
- * import { wrap } from 'terminal-reflowjs';
- *
- * const wrapped = wrap("Hello World!", 7);
- * // Result:
- * // Hello W
- * // orld!
- * ```
- *
- * @remarks
- * This wrapping method can be used in conjunction with word-wrapping
- * when word-wrapping is preferred but a line limit has to be enforced.
+ * Wrap module for unconditional (hard) text wrapping
+ * Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go
+ * 
+ * This module performs unconditional wrapping of text, which means it wraps
+ * strictly at the specified width regardless of word boundaries. It preserves
+ * ANSI escape sequences correctly by not counting them toward the line width.
  *
  * @packageDocumentation
  */
 
+import { eastAsianWidth } from "get-east-asian-width";
+import { Marker, isTerminator, printableRuneWidth } from "./ansi";
+
 /**
- * Writer interface for hard-wrap text processing.
- *
- * Compatible with io.Writer patterns from Go.
- *
- * @public
+ * Default configuration values
  */
-export interface WrapWriter {
-  /**
-   * Writes a string to the output.
-   * @param s - The string to write
-   */
-  write(s: string): void;
-
-  /**
-   * Returns the wrapped string result.
-   */
-  toString(): string;
-}
+const defaultNewline = "\n";
+const defaultTabWidth = 4;
 
 /**
- * Options for hard wrapping.
+ * Options for configuring the wrap behavior
  * @public
  */
 export interface WrapOptions {
-  /** The maximum width for wrapped lines */
-  limit?: number;
-  /** Characters that represent newlines */
-  newline?: string[];
-  /** Whether to preserve existing newlines (default: true) */
+  /**
+   * Maximum line width (number of printable characters)
+   */
+  limit: number;
+
+  /**
+   * Newline character(s) to use when wrapping
+   * Default: '\n'
+   */
+  newline?: string;
+
+  /**
+   * Whether to preserve existing newlines in the input
+   * If false, newlines are removed and the text is reflowed
+   * Default: true
+   */
   keepNewlines?: boolean;
-  /** Whether to preserve trailing space at end of lines */
+
+  /**
+   * Whether to preserve leading spaces after a forced line break
+   * If false, leading whitespace after a forced wrap is trimmed
+   * Default: false
+   */
   preserveSpace?: boolean;
-  /** Width of tab characters (default: 4) */
+
+  /**
+   * Width of tab characters in spaces
+   * Default: 4
+   */
   tabWidth?: number;
 }
 
 /**
- * Creates a new hard-wrap writer with the specified limit.
- *
- * @param limit - The maximum width for wrapped lines
- * @returns A new WrapWriter instance
- * @throws {@link Error} Not yet implemented
+ * Writer class for wrapping text with ANSI escape sequence awareness
+ * Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go#L17-L28
  * @public
  */
-export function newWriter(limit: number): WrapWriter {
-  throw new Error("wrap.newWriter() not yet implemented");
+export class Writer {
+  /**
+   * Maximum line width
+   */
+  public limit: number;
+
+  /**
+   * Newline character(s) to insert when wrapping
+   */
+  public newline: string;
+
+  /**
+   * Whether to keep existing newlines
+   */
+  public keepNewlines: boolean;
+
+  /**
+   * Whether to preserve spaces after forced line breaks
+   */
+  public preserveSpace: boolean;
+
+  /**
+   * Tab width in spaces
+   */
+  public tabWidth: number;
+
+  private buf: string;
+  private lineLen: number;
+  private ansi: boolean;
+  private forcefulNewline: boolean;
+
+  constructor(options: WrapOptions) {
+    this.limit = options.limit;
+    this.newline = options.newline ?? defaultNewline;
+    this.keepNewlines = options.keepNewlines ?? true;
+    this.preserveSpace = options.preserveSpace ?? false;
+    this.tabWidth = options.tabWidth ?? defaultTabWidth;
+
+    this.buf = "";
+    this.lineLen = 0;
+    this.ansi = false;
+    this.forcefulNewline = false;
+  }
+
+  /**
+   * Add a newline to the buffer
+   */
+  private addNewLine(): void {
+    this.buf += "\n";
+    this.lineLen = 0;
+  }
+
+  /**
+   * Write text to the buffer with wrapping
+   * Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go#L68-L119
+   */
+  public write(text: string | Buffer): void {
+    // Convert Buffer to string if needed
+    let s = typeof text === "string" ? text : text.toString("utf-8");
+
+    // Replace tabs with spaces
+    s = s.replace(/\t/g, " ".repeat(this.tabWidth));
+
+    // Optionally remove newlines
+    if (!this.keepNewlines) {
+      s = s.replace(/\n/g, "");
+    }
+
+    const width = printableRuneWidth(s);
+
+    // If no limit or content fits on current line, just append
+    if (this.limit <= 0 || this.lineLen + width <= this.limit) {
+      this.lineLen += width;
+      this.buf += s;
+      return;
+    }
+
+    // Process character by character for wrapping
+    // Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go#L82-L116
+    for (const char of s) {
+      if (char === Marker) {
+        // Start of ANSI escape sequence
+        this.ansi = true;
+      } else if (this.ansi) {
+        // Inside ANSI escape sequence
+        if (isTerminator(char)) {
+          this.ansi = false;
+        }
+      } else if (this.isNewline(char)) {
+        // Newline character in input
+        this.addNewLine();
+        this.forcefulNewline = false;
+        continue;
+      } else {
+        // Regular printable character
+        const codePoint = char.codePointAt(0);
+        const charWidth = codePoint !== undefined ? eastAsianWidth(codePoint) : 0;
+
+        // Check if we need to wrap
+        if (this.lineLen + charWidth > this.limit) {
+          this.addNewLine();
+          this.forcefulNewline = true;
+        }
+
+        // Skip leading space after forced wrap if preserveSpace is false
+        if (this.lineLen === 0) {
+          if (this.forcefulNewline && !this.preserveSpace && this.isSpace(char)) {
+            continue;
+          }
+        } else {
+          this.forcefulNewline = false;
+        }
+
+        this.lineLen += charWidth;
+      }
+
+      this.buf += char;
+    }
+  }
+
+  /**
+   * Check if a character is a newline
+   */
+  private isNewline(char: string): boolean {
+    return this.newline.includes(char);
+  }
+
+  /**
+   * Check if a character is whitespace
+   */
+  private isSpace(char: string): boolean {
+    return /\s/.test(char);
+  }
+
+  /**
+   * Get the wrapped result as a Buffer
+   */
+  public bytes(): Buffer {
+    return Buffer.from(this.buf, "utf-8");
+  }
+
+  /**
+   * Get the wrapped result as a string
+   */
+  public toString(): string {
+    return this.buf;
+  }
 }
 
 /**
- * Hard-wraps a string to the specified width.
- *
- * This is a convenience function that wraps text at exact character
- * boundaries, regardless of word breaks.
- *
- * @param s - The string to wrap
- * @param limit - The exact width for lines
- * @returns The wrapped text
- * @throws {@link Error} Not yet implemented
- *
- * @example
- * ```ts
- * const result = wrap("Hello World!", 7);
- * console.log(result);
- * // Hello W
- * // orld!
- * ```
- *
+ * Shorthand function to wrap a string
+ * Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go#L63-L66
+ * 
+ * @param text - The text to wrap
+ * @param limit - Maximum line width
+ * @param options - Optional wrapping configuration
+ * @returns Wrapped text
  * @public
  */
-export function wrap(s: string, limit: number): string {
-  throw new Error("wrap.wrap() not yet implemented");
+export function wrapString(
+  text: string,
+  limit: number,
+  options?: Partial<Omit<WrapOptions, "limit">>
+): string {
+  const writer = new Writer({ limit, ...options });
+  writer.write(text);
+  return writer.toString();
+}
+
+/**
+ * Shorthand function to wrap bytes
+ * Reference: https://github.com/muesli/reflow/blob/master/wrap/wrap.go#L52-L58
+ * 
+ * @param data - The data to wrap
+ * @param limit - Maximum line width
+ * @param options - Optional wrapping configuration
+ * @returns Wrapped data as Buffer
+ * @public
+ */
+export function wrapBytes(
+  data: Buffer,
+  limit: number,
+  options?: Partial<Omit<WrapOptions, "limit">>
+): Buffer {
+  const writer = new Writer({ limit, ...options });
+  writer.write(data);
+  return writer.bytes();
 }
