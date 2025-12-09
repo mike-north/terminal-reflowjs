@@ -61,7 +61,6 @@ export class PaddingWriter {
         // Note: We calculate width character-by-character to match the Go implementation
         // and to correctly handle newlines mid-stream. This is necessary because we need
         // to know the exact width at the point where we encounter a newline.
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/restrict-plus-operands
         this.lineLen += stringWidth(char);
 
         if (char === '\n') {
