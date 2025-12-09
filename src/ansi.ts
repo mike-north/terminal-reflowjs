@@ -15,6 +15,12 @@ import stringWidth from 'string-width';
 export const ANSI_MARKER = '\x1B';
 
 /**
+ * ANSI reset sequence to clear all formatting
+ * Reference: https://github.com/muesli/reflow/blob/master/ansi/writer.go
+ */
+export const ANSI_RESET = '\x1b[0m';
+
+/**
  * Checks if a character is an ANSI sequence terminator.
  * ANSI sequences are terminated by characters in the ranges 0x40-0x5a and 0x61-0x7a.
  * 
@@ -97,7 +103,7 @@ export class AnsiWriter {
           const seqStr = this.ansiSeq.join('');
           
           // Check for reset sequence
-          if (seqStr.endsWith('[0m')) {
+          if (seqStr === ANSI_RESET) {
             this.lastSeq = [];
             this.seqChanged = false;
           } else if (char === 'm') {
@@ -134,7 +140,7 @@ export class AnsiWriter {
     if (!this.seqChanged) {
       return;
     }
-    this.output.push('\x1b[0m');
+    this.output.push(ANSI_RESET);
   }
 
   /**
